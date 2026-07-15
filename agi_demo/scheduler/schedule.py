@@ -1,269 +1,478 @@
 #!/usr/bin/env python3
-"""Resource-aware job scheduler for the B200 (or any single-GPU box).
+"""Resource-aware, restart-safe scheduler for a single Linux GPU host.
 
-WHY: kernel jobs use ~4 GB / 183 GB and are launch-bound (sequential scan), so hand-batched
-`&`+`wait` barriers waste the GPU — fast jobs idle waiting for slow ones. This scheduler packs as
-many jobs onto the GPU as MEASURED headroom allows, launching new ones the instant capacity frees.
-
-DESIGN (robust by construction — survives its own restart, never double-launches):
-  * STATELESS liveness. "running" = a process whose cmdline contains this job's --out-dir (pgrep);
-    "done" = <out_dir>/metrics.json exists. So if the scheduler is killed and restarted, it simply
-    re-derives the world from the filesystem + process table. No Popen handles to lose.
-  * ADMISSION = memory headroom + concurrency cap + util ceiling. Admit job J iff
-      running < max_concurrent
-      AND est_mem(J) <= free_mem - reserved - safety_margin
-      AND gpu_util < util_ceiling
-    `reserved` = sum of est_mem for jobs launched within the last `warmup_s` seconds — they may not
-    have allocated their memory yet, so we RESERVE it to avoid a launch stampede that OOMs the box.
-  * CRASH-LOOP GUARD. A job that is launched but then neither running nor done within `grace_s` is
-    retried up to `max_attempts`, then marked failed (won't relaunch forever).
-  * Detached launch (`setsid`), so jobs outlive the scheduler; logs stream to <out_dir>/run.log.
-  * Writes scheduler_state.json each tick for the dashboard.
-
-Jobs are declared in a JSON spec (see jobs_kernel.json); nothing about the job matrix is hardcoded
-here — change the spec, not this file.
-
-Usage (on the remote, under nohup):
-  python3 schedule.py jobs_kernel.json [--max-concurrent 8] [--mem-safety-mb 8000] \
-      [--warmup-s 40] [--poll-s 10] [--util-ceiling 96]
+The scheduler never kills a job. A retry is allowed only after the exact process previously
+associated with an output directory has disappeared and no other live process owns that directory.
+One advisory lock per output tree prevents two scheduler/launcher instances from admitting the
+same job concurrently.
 """
+from __future__ import annotations
+
 import argparse
+import fcntl
 import json
 import os
-import re
+import shlex
 import subprocess
-import sys
 import time
+from dataclasses import dataclass
+from typing import Any
 
 
-def sh(cmd):
+@dataclass(frozen=True)
+class ProcessRef:
+    pid: int
+    start_ticks: int
+    pgid: int
+    argv: tuple[str, ...]
+    out_dir: str
+
+
+class AlreadyLocked(RuntimeError):
+    pass
+
+
+def atomic_json_write(path: str, value: dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = f"{path}.tmp.{os.getpid()}"
+    with open(tmp, "w") as f:
+        json.dump(value, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def acquire_run_lock(path: str):
+    """Hold this returned file object for the lifetime of the scheduler/launcher."""
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    lock_file = open(path, "a+")
     try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode("utf-8", "replace")
-    except Exception:
-        return ""
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        lock_file.seek(0)
+        owner = lock_file.read().strip() or "unknown"
+        lock_file.close()
+        raise AlreadyLocked(f"another scheduler/launcher holds {path} (pid {owner})") from exc
+    lock_file.seek(0)
+    lock_file.truncate()
+    lock_file.write(str(os.getpid()))
+    lock_file.flush()
+    return lock_file
 
 
-def gpu_stat():
-    """(free_mb, used_mb, total_mb, util_pct). Peak-of-3 util so a between-kernel trough
-    doesn't read as idle. Returns None on failure (caller treats as 'no headroom info')."""
+def gpu_stat() -> dict[str, int] | None:
+    """Return the busiest of three samples, or None when GPU telemetry is unavailable."""
     best = None
+    command = [
+        "nvidia-smi",
+        "--query-gpu=memory.free,memory.used,memory.total,utilization.gpu",
+        "--format=csv,noheader,nounits",
+    ]
     for _ in range(3):
-        out = sh("nvidia-smi --query-gpu=memory.free,memory.used,memory.total,utilization.gpu "
-                 "--format=csv,noheader,nounits").strip()
-        if out:
-            p = [int(x.strip()) for x in out.splitlines()[0].split(",")]
-            if best is None or p[3] > best[3]:
-                best = p
+        try:
+            out = subprocess.check_output(command, stderr=subprocess.DEVNULL, text=True).strip()
+            values = [int(x.strip()) for x in out.splitlines()[0].split(",")]
+            sample = {"free": values[0], "used": values[1], "total": values[2], "util": values[3]}
+            if best is None or sample["util"] > best["util"]:
+                best = sample
+        except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+            pass
         time.sleep(0.3)
-    if not best:
-        return None
-    return {"free": best[0], "used": best[1], "total": best[2], "util": best[3]}
+    return best
 
 
-def running_outdirs():
-    """Set of --out-dir paths that currently have a live training process (the liveness source)."""
-    out = sh("pgrep -af 'kernel.run|agi_demo.run' | grep -v pgrep | grep -v schedule.py")
-    dirs = set()
-    for m in re.finditer(r"--out-dir\s+(\S+)", out):
-        dirs.add(os.path.normpath(m.group(1)))
-    return dirs
+def _proc_start_ticks(pid: int) -> int:
+    with open(f"/proc/{pid}/stat") as f:
+        stat = f.read()
+    # comm may contain spaces and parentheses; fields after the final ')' begin at field 3.
+    return int(stat[stat.rfind(")") + 2 :].split()[19])
 
 
-def load_spec(path):
+def _absolute_out_dir(value: str, pid: int) -> str:
+    if os.path.isabs(value):
+        return os.path.normpath(value)
+    cwd = os.readlink(f"/proc/{pid}/cwd")
+    return os.path.normpath(os.path.join(cwd, value))
+
+
+def _out_dir_from_argv(argv: tuple[str, ...], pid: int) -> str | None:
+    for index, token in enumerate(argv):
+        if token == "--out-dir" and index + 1 < len(argv):
+            return _absolute_out_dir(argv[index + 1], pid)
+        if token.startswith("--out-dir="):
+            return _absolute_out_dir(token.split("=", 1)[1], pid)
+    return None
+
+
+def live_processes_by_outdir(proc_root: str = "/proc") -> dict[str, list[ProcessRef]]:
+    """Read argv directly from procfs; an empty result is never synthesized from command failure."""
+    if not os.path.isdir(proc_root):
+        raise RuntimeError(f"procfs is unavailable at {proc_root}")
+    result: dict[str, list[ProcessRef]] = {}
+    for entry in os.scandir(proc_root):
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        try:
+            with open(os.path.join(proc_root, entry.name, "cmdline"), "rb") as f:
+                raw = f.read()
+            argv = tuple(part.decode("utf-8", "surrogateescape") for part in raw.split(b"\0") if part)
+            if not argv:
+                continue
+            out_dir = _out_dir_from_argv(argv, pid)
+            if out_dir is None:
+                continue
+            ref = ProcessRef(
+                pid=pid,
+                start_ticks=_proc_start_ticks(pid),
+                pgid=os.getpgid(pid),
+                argv=argv,
+                out_dir=out_dir,
+            )
+            result.setdefault(out_dir, []).append(ref)
+        except (FileNotFoundError, ProcessLookupError, PermissionError, OSError, ValueError):
+            # Processes can exit while /proc is being scanned. A tracked live process is rediscovered
+            # on the next tick; no retry happens merely because a scan entry was unreadable.
+            continue
+    return result
+
+
+def recorded_process_alive(record: dict[str, Any]) -> bool:
+    """Conservatively verify a saved PID generation when the full procfs scan missed it."""
+    pid = record.get("pid")
+    if not isinstance(pid, int):
+        return False
+    root_alive = True
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        root_alive = False
+    except PermissionError:
+        return True
+    expected_start = record.get("start_ticks")
+    if root_alive and expected_start is None:
+        return True
+    if root_alive:
+        try:
+            if _proc_start_ticks(pid) == expected_start:
+                return True
+        except (PermissionError, OSError, ValueError):
+            # An unreadable live identity is not evidence that it exited.
+            return True
+
+    # The session leader can exit before multiprocessing workers. Never relaunch into a surviving
+    # process group created for this job.
+    pgid = record.get("pgid")
+    if isinstance(pgid, int) and pgid > 0:
+        try:
+            os.killpg(pgid, 0)
+            return True
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            return True
+    return False
+
+
+def load_spec(path: str, workdir: str) -> tuple[list[str], str, list[dict[str, Any]]]:
     with open(path) as f:
         spec = json.load(f)
-    base = spec["base_cmd"]
+    base_command = shlex.split(spec["base_cmd"])
+    if not base_command:
+        raise ValueError("base_cmd must not be empty")
     out_base = spec["out_base"]
+    out_base_abs = os.path.normpath(out_base if os.path.isabs(out_base) else os.path.join(workdir, out_base))
     defaults = spec.get("defaults", {})
     jobs = []
-    for j in spec["jobs"]:
-        jobs.append({
-            "name": j["name"],
-            "args": j["args"],
-            "est_mem_mb": j.get("est_mem_mb", defaults.get("est_mem_mb", 6000)),
-            "priority": j.get("priority", 0),
-            "out_dir": os.path.normpath(os.path.join(out_base, j["name"])),
-        })
-    return base, out_base, jobs
+    names, out_dirs = set(), set()
+    for item in spec["jobs"]:
+        name = item["name"]
+        out_dir = os.path.normpath(os.path.join(out_base_abs, name))
+        if os.path.commonpath([out_base_abs, out_dir]) != out_base_abs:
+            raise ValueError(f"job output escapes out_base: {name}")
+        if name in names or out_dir in out_dirs:
+            raise ValueError(f"duplicate job name or output directory: {name}")
+        names.add(name)
+        out_dirs.add(out_dir)
+        command = base_command + [str(arg) for arg in item["args"]] + ["--out-dir", out_dir]
+        jobs.append(
+            {
+                "name": name,
+                "args": item["args"],
+                "est_mem_mb": item.get("est_mem_mb", defaults.get("est_mem_mb", 6000)),
+                "priority": item.get("priority", 0),
+                "out_dir": out_dir,
+                "command": command,
+            }
+        )
+    return base_command, out_base_abs, jobs
 
 
-def kill_stale(out_dir):
-    """Kill any process still bound to this out_dir before (re)launching. Prevents the new
-    process from colliding with a survivor of a prior launch — that collision SIGKILLs one of
-    them mid-write (leaves NUL bytes in run.log and orphaned CUDA contexts). Idempotent."""
-    # match the exact '--out-dir <dir>' token; pkill -f matches the full cmdline
-    subprocess.call(f"pkill -9 -f -- '--out-dir {out_dir}$' 2>/dev/null; "
-                    f"pkill -9 -f -- '--out-dir {out_dir} ' 2>/dev/null", shell=True)
+def load_job_state(path: str) -> dict[str, dict[str, Any]]:
+    try:
+        with open(path) as f:
+            state = json.load(f)
+        records = state.get("job_state", {})
+        return records if isinstance(records, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
 
 
-def launch(base_cmd, job, workdir):
-    """Launch a job fully detached so it outlives the scheduler. We write the command to a small
-    runner script and exec THAT (avoids fragile shell escaping through nested quoting), then
-    setsid+background it. Logs stream to <out_dir>/run.log."""
-    kill_stale(job["out_dir"])          # clear any survivor bound to this out_dir first
+def reconcile_jobs(
+    jobs: list[dict[str, Any]],
+    records: dict[str, dict[str, Any]],
+    live: dict[str, list[ProcessRef]],
+    max_attempts: int,
+    now: float,
+) -> dict[str, str]:
+    """Reconcile durable ownership with procfs without ever terminating a process."""
+    statuses: dict[str, str] = {}
+    for job in jobs:
+        name, out_dir = job["name"], job["out_dir"]
+        refs = live.get(out_dir, [])
+        record = records.setdefault(name, {"attempts": 0, "status": "queued"})
+        metrics_exist = os.path.exists(os.path.join(out_dir, "metrics.json"))
+
+        if len(refs) > 1:
+            owners = [
+                {
+                    "pid": ref.pid,
+                    "start_ticks": ref.start_ticks,
+                    "pgid": ref.pgid if ref.pgid == ref.pid else None,
+                }
+                for ref in refs
+            ]
+            record.update(
+                {"status": "conflict", "pids": sorted(ref.pid for ref in refs), "owners": owners}
+            )
+            statuses[name] = "conflict"
+            continue
+        if len(refs) == 1:
+            ref = refs[0]
+            record.update(
+                {
+                    "status": "finishing" if metrics_exist else "running",
+                    "pid": ref.pid,
+                    "start_ticks": ref.start_ticks,
+                    "pgid": ref.pgid if ref.pgid == ref.pid else None,
+                    "last_seen_at": now,
+                }
+            )
+            record.pop("pids", None)
+            record.pop("owners", None)
+            statuses[name] = record["status"]
+            continue
+        if metrics_exist:
+            record.update({"status": "done", "finished_at": now})
+            statuses[name] = "done"
+            continue
+
+        previous = record.get("status")
+        if previous == "conflict" and any(
+            recorded_process_alive(owner) for owner in record.get("owners", [])
+        ):
+            record["status"] = "uncertain"
+            statuses[name] = "uncertain"
+            continue
+        if previous in {"running", "finishing", "launching", "uncertain"} and recorded_process_alive(record):
+            record["status"] = "uncertain"
+            statuses[name] = "uncertain"
+            continue
+        if previous in {"running", "finishing", "launching", "conflict", "uncertain"}:
+            record.update({"status": "exited", "exited_at": now})
+        record.pop("pids", None)
+        record.pop("owners", None)
+        if record.get("attempts", 0) >= max_attempts:
+            record["status"] = "failed"
+            statuses[name] = "failed"
+        else:
+            record["status"] = "queued"
+            statuses[name] = "queued"
+    return statuses
+
+
+def launch_job(job: dict[str, Any], workdir: str) -> subprocess.Popen:
     os.makedirs(job["out_dir"], exist_ok=True)
-    full = f"{base_cmd} {' '.join(job['args'])} --out-dir {job['out_dir']}"
-    runner = os.path.join(job["out_dir"], ".run.sh")
-    with open(runner, "w") as f:
-        f.write("#!/bin/bash\n")
-        f.write(f"cd {workdir}\n")
-        f.write(f"exec {full} > {job['out_dir']}/run.log 2>&1\n")
-    os.chmod(runner, 0o755)
-    # setsid detaches into its own session; if setsid is unavailable, fall back to plain nohup
-    setsid = "setsid" if _have("setsid") else "nohup"
-    subprocess.Popen(f"{setsid} bash {runner} >/dev/null 2>&1 &", shell=True)
+    log_path = os.path.join(job["out_dir"], "run.log")
+    log = open(log_path, "ab", buffering=0)
+    marker = f"\n[scheduler launch {time.strftime('%Y-%m-%d %H:%M:%S')}] {shlex.join(job['command'])}\n"
+    log.write(marker.encode())
+    try:
+        process = subprocess.Popen(
+            job["command"],
+            cwd=workdir,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    finally:
+        log.close()
+    return process
 
 
-def _have(prog):
-    return subprocess.call(f"command -v {prog} >/dev/null 2>&1", shell=True) == 0
+def make_state(
+    jobs: list[dict[str, Any]],
+    records: dict[str, dict[str, Any]],
+    statuses: dict[str, str],
+    gpu: dict[str, int] | None,
+    reserved_mb: int,
+    args: argparse.Namespace,
+    admitted: list[str],
+    error: str | None = None,
+) -> dict[str, Any]:
+    groups = {status: sorted(name for name, value in statuses.items() if value == status)
+              for status in {"queued", "running", "finishing", "done", "failed", "conflict", "uncertain", "unknown"}}
+    running = sorted(groups["running"] + groups["finishing"] + groups["uncertain"])
+    return {
+        "schema_version": 2,
+        "ts": time.strftime("%H:%M:%S"),
+        "gpu": gpu,
+        "reserved_mb": reserved_mb,
+        "policy": {
+            "max_concurrent": args.max_concurrent,
+            "mem_safety_mb": args.mem_safety_mb,
+            "warmup_s": args.warmup_s,
+            "util_ceiling": args.util_ceiling,
+            "max_attempts": args.max_attempts,
+        },
+        "counts": {
+            "total": len(jobs),
+            "done": len(groups["done"]),
+            "running": len(running),
+            "queued": len(groups["queued"]),
+            "failed": len(groups["failed"]),
+            "conflict": len(groups["conflict"]),
+            "unknown": len(groups["unknown"]),
+        },
+        "running": running,
+        "queued": groups["queued"],
+        "done": groups["done"],
+        "failed": groups["failed"],
+        "conflict": groups["conflict"],
+        "uncertain": groups["uncertain"],
+        "unknown": groups["unknown"],
+        "just_admitted": admitted,
+        "job_state": records,
+        "error": error,
+    }
 
 
-def main():
+def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("spec")
     ap.add_argument("--workdir", default="/media/cfs/xiezongyu.1/AGI")
     ap.add_argument("--max-concurrent", type=int, default=8)
     ap.add_argument("--mem-safety-mb", type=int, default=8000)
     ap.add_argument("--warmup-s", type=int, default=40)
-    ap.add_argument("--poll-s", type=int, default=10)
+    ap.add_argument("--poll-s", type=float, default=10)
     ap.add_argument("--util-ceiling", type=int, default=96)
-    ap.add_argument("--grace-s", type=int, default=90, help="a launched job must appear running within this")
-    ap.add_argument("--absent-grace-s", type=int, default=300,
-                    help="a job seen running may vanish from pgrep this long before we treat it as "
-                         "crashed and relaunch. Set generously (default 5min): a node/tunnel stall "
-                         "makes pgrep briefly return nothing, and a premature relaunch collides with "
-                         "the still-alive original (mutual SIGKILL). Better to wait out the stall.")
     ap.add_argument("--max-attempts", type=int, default=2)
-    ap.add_argument("--state", default=None, help="state json path (default: <out_base>/scheduler_state.json)")
+    ap.add_argument("--state", default=None)
+    # Kept as no-op compatibility flags. Direct child PID ownership replaces time-based guessing.
+    ap.add_argument("--grace-s", type=int, default=90, help=argparse.SUPPRESS)
+    ap.add_argument("--absent-grace-s", type=int, default=300, help=argparse.SUPPRESS)
     args = ap.parse_args()
 
-    base_cmd, out_base, jobs = load_spec(args.spec)
-    state_path = args.state or os.path.join(out_base, "scheduler_state.json")
+    workdir = os.path.abspath(args.workdir)
+    _, out_base, jobs = load_spec(args.spec, workdir)
+    state_path = os.path.abspath(args.state) if args.state else os.path.join(out_base, "scheduler_state.json")
     os.makedirs(out_base, exist_ok=True)
+    try:
+        lock = acquire_run_lock(os.path.join(out_base, ".scheduler.lock"))
+    except AlreadyLocked as exc:
+        print(f"[sched] refusing duplicate instance: {exc}", flush=True)
+        return 2
 
-    launched_at = {}      # name -> ts of last launch (reservation + grace tracking)
-    attempts = {}         # name -> count
-    seen_running = {}     # name -> True once pgrep has confirmed it live (closes the launch race)
-    last_seen = {}        # name -> ts pgrep last saw it live (absent-grace tolerates flicker)
-    print(f"[sched] {len(jobs)} jobs | max_conc={args.max_concurrent} "
-          f"safety={args.mem_safety_mb}MB warmup={args.warmup_s}s poll={args.poll_s}s", flush=True)
-
-    while True:
-        now = time.time()
-        g = gpu_stat()
-        running = running_outdirs()
-
-        def is_done(j):
-            return os.path.exists(os.path.join(j["out_dir"], "metrics.json"))
-
-        def is_running(j):
-            return j["out_dir"] in running
-
-        done = [j for j in jobs if is_done(j)]
-        run_now = {j["name"] for j in jobs if is_running(j) and not is_done(j)}
-        for nm in run_now:
-            seen_running[nm] = True     # latch first time pgrep confirms it live
-            last_seen[nm] = now         # refresh liveness timestamp every tick it's visible
-
-        # Robust status model (fixes the re-admit bug): a job counts as OCCUPYING a slot if it is
-        # either visible to pgrep now, OR launched-and-warming, OR was seen running and hasn't been
-        # ABSENT longer than absent_grace_s. pgrep routinely misses a live proc for a tick or two
-        # (fork/cmdline flicker, between-seed churn); the OLD code dropped such a job straight back
-        # into `queued` and relaunched it, spawning duplicates that overwrote run.log and reset
-        # progress. We only treat a job as crashed/finished-without-metrics after it has been gone
-        # from pgrep for a sustained window.
-        def occupies_slot(j):
-            nm = j["name"]
-            if nm in run_now:
-                return True                                   # visibly running
-            if nm not in launched_at:
-                return False                                  # never launched
-            if is_done(j):
-                return False                                  # finished (has metrics.json)
-            if now - launched_at[nm] <= args.warmup_s:
-                return True                                   # just launched, still starting up
-            if seen_running.get(nm) and now - last_seen.get(nm, 0) <= args.absent_grace_s:
-                return True                                   # seen live recently; pgrep flicker
-            return False                                      # gone long enough -> not occupying
-
-        occupied = [j for j in jobs if occupies_slot(j)]
-        run = occupied                                        # for slot accounting + state output
-        run_names = {j["name"] for j in occupied}
-
-        # reserved memory = est_mem of every occupying job still inside its warmup window (may not
-        # have allocated its VRAM yet — reserve so we don't over-admit into a launch stampede)
-        reserved = sum(j["est_mem_mb"] for j in occupied
-                       if j["name"] in launched_at and now - launched_at[j["name"]] < args.warmup_s)
-
-        # classify the rest: anything not done and not occupying a slot is either a retry or queued
-        queued, failed = [], []
-        for j in jobs:
-            if is_done(j) or j["name"] in run_names:
+    records = load_job_state(state_path)
+    children: dict[int, subprocess.Popen] = {}
+    print(f"[sched] {len(jobs)} jobs | max_conc={args.max_concurrent} | pid={os.getpid()}", flush=True)
+    try:
+        while True:
+            # Reap children launched by this scheduler. Adopted jobs are reaped by their original
+            # parent/init and are still tracked through procfs plus their persisted process group.
+            for pid, child in list(children.items()):
+                if child.poll() is not None:
+                    children.pop(pid)
+            now = time.time()
+            gpu = gpu_stat()
+            try:
+                live = live_processes_by_outdir()
+            except RuntimeError as exc:
+                # Unknown liveness must stop admission. It must never be interpreted as zero jobs.
+                statuses = {job["name"]: records.get(job["name"], {}).get("status", "unknown")
+                            for job in jobs}
+                state = make_state(jobs, records, statuses, gpu, 0, args, [], str(exc))
+                atomic_json_write(state_path, state)
+                print(f"[sched] liveness unavailable; admission paused: {exc}", flush=True)
+                time.sleep(args.poll_s)
                 continue
-            nm = j["name"]
-            la = launched_at.get(nm)
-            # launched, then disappeared from pgrep for > absent_grace (or never appeared within
-            # grace) -> crashed / exited without metrics.json. Retry unless out of attempts.
-            crashed = la is not None and (
-                (seen_running.get(nm) and now - last_seen.get(nm, 0) > args.absent_grace_s)
-                or (not seen_running.get(nm) and now - la > args.grace_s))
-            if crashed and attempts.get(nm, 0) >= args.max_attempts:
-                failed.append(j)
-                continue
-            queued.append(j)
 
-        failed_names = {j["name"] for j in failed}
-
-        # admission: highest priority first, pack by measured headroom
-        admitted_this_tick = []
-        if g is not None:
-            eff_free = g["free"] - reserved - args.mem_safety_mb
-            slots = args.max_concurrent - len(run)
-            for j in sorted(queued, key=lambda x: -x["priority"]):
-                if slots <= 0:
-                    break
-                if g["util"] >= args.util_ceiling:
-                    break
-                if j["est_mem_mb"] <= eff_free:
-                    launch(base_cmd, j, args.workdir)
-                    launched_at[j["name"]] = now
-                    attempts[j["name"]] = attempts.get(j["name"], 0) + 1
-                    eff_free -= j["est_mem_mb"]
+            statuses = reconcile_jobs(jobs, records, live, args.max_attempts, now)
+            # Count actual processes, including duplicates and jobs finishing after metrics.json.
+            active_count = sum(len(live.get(job["out_dir"], [])) for job in jobs)
+            active_count += sum(
+                1 for job in jobs
+                if statuses[job["name"]] == "uncertain" and not live.get(job["out_dir"])
+            )
+            reserved = sum(
+                job["est_mem_mb"]
+                for job in jobs
+                if statuses[job["name"]] in {"running", "finishing"}
+                and now - records[job["name"]].get("launched_at", 0) < args.warmup_s
+            )
+            admitted = []
+            if gpu is not None:
+                effective_free = gpu["free"] - reserved - args.mem_safety_mb
+                slots = max(0, args.max_concurrent - active_count)
+                queued = sorted((job for job in jobs if statuses[job["name"]] == "queued"),
+                                key=lambda job: -job["priority"])
+                for job in queued:
+                    if slots <= 0 or gpu["util"] >= args.util_ceiling:
+                        break
+                    if job["est_mem_mb"] > effective_free:
+                        continue
+                    try:
+                        process = launch_job(job, workdir)
+                    except OSError as exc:
+                        record = records[job["name"]]
+                        record["launch_error"] = str(exc)
+                        print(f"[sched] failed to launch {job['name']}: {exc}", flush=True)
+                        continue
+                    record = records[job["name"]]
+                    try:
+                        start_ticks = _proc_start_ticks(process.pid)
+                    except (FileNotFoundError, ProcessLookupError, OSError, ValueError):
+                        start_ticks = None
+                    record.update(
+                        {
+                            "attempts": record.get("attempts", 0) + 1,
+                            "status": "launching",
+                            "pid": process.pid,
+                            "start_ticks": start_ticks,
+                            "pgid": process.pid,
+                            "launched_at": now,
+                            "command": job["command"],
+                        }
+                    )
+                    children[process.pid] = process
+                    statuses[job["name"]] = "running"
+                    effective_free -= job["est_mem_mb"]
                     slots -= 1
-                    admitted_this_tick.append(j["name"])
+                    admitted.append(job["name"])
 
-        # persist state for the dashboard
-        state = {
-            "ts": time.strftime("%H:%M:%S"),
-            "gpu": g,
-            "reserved_mb": reserved,
-            "policy": {"max_concurrent": args.max_concurrent, "mem_safety_mb": args.mem_safety_mb,
-                       "warmup_s": args.warmup_s, "util_ceiling": args.util_ceiling},
-            "counts": {"total": len(jobs), "done": len(done), "running": len(run),
-                       "queued": len(queued), "failed": len(failed)},
-            "running": sorted(run_names),
-            "queued": [j["name"] for j in sorted(queued, key=lambda x: -x["priority"])],
-            "done": [j["name"] for j in done],
-            "failed": sorted(failed_names),
-            "just_admitted": admitted_this_tick,
-        }
-        tmp = state_path + ".tmp"
-        with open(tmp, "w") as f:
-            json.dump(state, f, indent=2)
-        os.replace(tmp, state_path)   # atomic — dashboard never reads a half-written file
-
-        if admitted_this_tick:
-            print(f"[sched {state['ts']}] admitted {admitted_this_tick} | "
-                  f"free={g['free'] if g else '?'}MB reserved={reserved}MB "
-                  f"running={len(run)} queued={len(queued)}", flush=True)
-
-        # exit when nothing is left to do
-        if len(done) + len(failed) == len(jobs):
-            print(f"[sched] all jobs settled: {len(done)} done, {len(failed)} failed "
-                  f"({sorted(failed_names)})", flush=True)
-            break
-        time.sleep(args.poll_s)
+            state = make_state(jobs, records, statuses, gpu, reserved, args, admitted)
+            atomic_json_write(state_path, state)
+            if admitted:
+                print(f"[sched {state['ts']}] admitted {admitted}", flush=True)
+            settled = all(statuses[job["name"]] in {"done", "failed"} for job in jobs)
+            if settled:
+                print(f"[sched] all jobs settled: {state['counts']['done']} done, "
+                      f"{state['counts']['failed']} failed", flush=True)
+                return 0
+            time.sleep(args.poll_s)
+    finally:
+        lock.close()
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

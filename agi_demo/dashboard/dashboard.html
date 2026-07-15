@@ -180,7 +180,7 @@ function fillHeader(){
 function schedulerSection(){
   var host=document.getElementById("sched-section"); host.innerHTML="";
   var sc=S.scheduler; if(!sc) return;   // no scheduler running -> panel simply absent
-  var c=sc.counts||{total:0,done:0,running:0,queued:0,failed:0};
+  var c=sc.counts||{total:0,done:0,running:0,queued:0,failed:0,conflict:0,unknown:0};
   var tot=c.total||1;
   var pol=sc.policy||{};
   var g=sc.gpu;
@@ -195,16 +195,21 @@ function schedulerSection(){
     '</div>'+
     '<div class="segbar">'+
       seg("seg-done",c.done,tot)+seg("seg-run",c.running,tot)+
-      seg("seg-queue",c.queued,tot)+seg("seg-fail",c.failed,tot)+
+      seg("seg-queue",c.queued,tot)+seg("seg-fail",(c.failed||0)+(c.conflict||0)+(c.unknown||0),tot)+
     '</div>'+
     '<div class="chips">'+
       chip("done","done",c.done)+chip("run","running",c.running)+
       chip("queue","queued",c.queued)+(c.failed?chip("fail","failed",c.failed):'')+
+      (c.conflict?chip("fail","conflict",c.conflict):'')+
+      (c.unknown?chip("fail","unknown",c.unknown):'')+
     '</div>'+
     (sc.queued&&sc.queued.length?('<div class="sched-policy" style="margin-top:8px">next up: '+
       sc.queued.slice(0,6).map(esc).join(", ")+(sc.queued.length>6?" …":"")+'</div>'):'')+
     (sc.failed&&sc.failed.length?('<div class="sched-policy" style="margin-top:4px;color:var(--crit)">failed: '+
-      sc.failed.map(esc).join(", ")+'</div>'):'');
+      sc.failed.map(esc).join(", ")+'</div>'):'')+
+    (sc.conflict&&sc.conflict.length?('<div class="sched-policy" style="margin-top:4px;color:var(--crit)">conflict (left running): '+
+      sc.conflict.map(esc).join(", ")+'</div>'):'')+
+    (sc.error?('<div class="sched-policy" style="margin-top:4px;color:var(--crit)">'+esc(sc.error)+'</div>'):'');
   host.appendChild(el);
 }
 function seg(cls,n,tot){ var w=100*n/tot; return w>0?('<span class="'+cls+'" style="width:'+w+'%"></span>'):''; }

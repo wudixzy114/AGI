@@ -25,7 +25,7 @@ echo "[submit] launching scheduler on $HOST (spec=$SPEC, max_concurrent=$MAXC)"
 ssh "$HOST" "cd $REMOTE_DIR && mkdir -p $OUT_BASE && \
   nohup /opt/conda/bin/python -u agi_demo/scheduler/schedule.py agi_demo/scheduler/$SPEC \
     --workdir $REMOTE_DIR --max-concurrent $MAXC \
-    > $OUT_BASE/scheduler.log 2>&1 & echo \"scheduler pid=\$!\""
+    >> $OUT_BASE/scheduler.log 2>&1 & echo \"scheduler pid=\$!\""
 
 echo "[submit] done. Watch with:"
 echo "    bash agi_demo/dashboard/dashboard.sh $HOST $REMOTE_DIR/$OUT_BASE"

@@ -39,19 +39,25 @@ Admit job J iff **all** hold:
 allocated their memory yet, so the scheduler **reserves** it to prevent a launch stampede that would
 OOM the box. Tunable via flags (`--max-concurrent`, `--mem-safety-mb`, `--warmup-s`, `--util-ceiling`).
 
-## Robust by construction
+## Process ownership and retries
 
-- **Stateless liveness** — "running" is derived from the process table (a process whose cmdline
-  carries the job's `--out-dir`), "done" from `metrics.json` existing. So the scheduler can be killed
-  and restarted and it re-derives the world from disk + `ps` — it never double-launches a job.
-- **Crash-loop guard** — a job launched but neither running nor done within `grace_s` is retried up
-  to `max_attempts`, then marked `failed` (won't relaunch forever).
-- **Detached launch** — each job runs under `setsid` (falls back to `nohup`) via a small generated
-  `.run.sh`, so jobs outlive the scheduler; logs stream to `<out_dir>/run.log`.
-- **Atomic state** — `scheduler_state.json` is written via a temp file + `os.replace`, so the
-  dashboard never reads a half-written file.
+- **One dispatcher per output tree** — `schedule.py` and `launch_all.py` share an advisory lock.
+  A second instance exits without launching anything.
+- **Exact process identity** — liveness comes from procfs argv tokens and records PID plus Linux
+  process start ticks in `scheduler_state.json`. There is no `pgrep` text pipeline and a command
+  failure is never interpreted as an empty process list.
+- **Non-destructive retry** — the scheduler never calls `pkill`. It retries only after the process
+  owning the exact output directory is gone and no other process owns it. Multiple owners are
+  reported as `conflict` and left untouched for manual diagnosis.
+- **Restart-safe attempts** — PID ownership, launch generation, and attempt counts are persisted.
+  On restart, live processes are adopted before admission decisions are made.
+- **Detached launch** — jobs are direct `Popen` children with a new session. Logs append to
+  `<out_dir>/run.log`, preserving evidence from earlier attempts.
+- **Atomic state** — state is flushed, fsynced, and atomically replaced, so the dashboard never
+  reads a partial file.
 
 ## Files
 - `schedule.py` — the daemon (stdlib only; runs on the remote under nohup).
+- `launch_all.py` — fire-once path for sweeps that fit in memory; safely skips active jobs.
 - `jobs_kernel.json` — the declarative job matrix (edit this to change the sweep).
 - `submit.sh` — rsync + launch the scheduler on the host.
