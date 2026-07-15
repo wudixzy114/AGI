@@ -90,31 +90,45 @@ multi-minute stall waits the process out instead of relaunching.
 decision was wrong. `pkill -f` also treated paths as regex and could overmatch. This changed a
 duplicate-write bug into an explicit mid-task termination path.
 
-## Final decision — delete the complexity for this workload
+## Final decision — cap concurrency on CPU RAM (the real bottleneck)
 
-Measured fact: single job ≈ 1.6–2 GB; **14 jobs × ~2 GB ≈ 28 GB vs 183 GB available.** Everything
-fits at once. The scheduler's reason-to-exist (pack jobs when they can't all fit) does not apply, so
-all of its fragile machinery is pure downside here.
+**First attempt (WRONG): fire all at once.** Reasoning was "single job ≈ 1.8 GB, 14 × 2 GB ≈ 28 GB
+vs **183 GB GPU** — everything fits." That only checked **GPU memory**. It ignored **CPU RAM**, which
+on this notebook is **~20 GB total** — a far tighter constraint. Firing all 12 remaining jobs at once,
+their simultaneous cold-starts (model init + CUDA context + dataloader) spiked past 20 GB and the
+kernel **OOM-killer culled them** (no Python traceback — the OOM-kill signature). All 12 died at
+step ~100, in lockstep. `n_jobs=1` on the probe did NOT fix it (the probe wasn't the trigger; the
+synchronized cold-start RAM spike was).
 
-**`agi_demo/scheduler/launch_all.py`** — fire every job once, detached, log to
-`<out_dir>/run.log`, then **exit**. The original version only skipped `metrics.json`; that was not
-actually idempotent while a job was still running. The repaired version also takes the output-tree
-dispatcher lock and skips output directories found in the live process table.
+**Correct fix: a concurrency cap gated on CPU RAM.** `agi_demo/scheduler/run_capped.py` — keep at most
+`--max-concurrent` jobs live, start a new one only when `MemAvailable > --min-free-mb`, staggered so
+init spikes don't overlap. It ONLY starts jobs (no liveness-relaunch-kill — the fragile machinery that
+caused the collisions). Idempotent: skips jobs with metrics.json, so re-running resumes. Ran P5A at
+`--max-concurrent 5 --min-free-mb 6000`: RAM stayed ~18 GB free, jobs progressed.
+
+**The real lesson: the binding resource here was never GPU — it was CPU RAM and process count.** Any
+launcher/scheduler on this box must gate on `MemAvailable`, not (only) `nvidia-smi`.
 
 ## Guidance for next time
 
-- **Default to `launch_all.py`** whenever the whole sweep fits in VRAM at once (check:
-  `Σ est_mem_mb ≪ GPU total`). It is the robust choice precisely because it has no moving parts.
-- **Reserve `schedule.py`** for genuinely memory-constrained sweeps (jobs that cannot all co-reside).
-  It now uses exact procfs argv/PID identity, persistent attempt state, and a single-dispatcher lock;
-  it never kills an existing process before retrying.
+- **Check CPU RAM first, not just GPU.** `MemAvailable` (~20 GB here) is the tight constraint; a job is
+  ~1.8 GB steady but peaks higher at cold-start. Concurrency ≈ `(free_RAM − headroom) / peak_per_job`.
+  Here that's ~5.
+- **Use `run_capped.py`** for any real sweep on this notebook: `--max-concurrent 5 --min-free-mb 6000`,
+  staggered starts. It has no relaunch/kill machinery, so it can't collide; resume by re-running.
+- **`launch_all.py` (fire-once) is only safe when the sweep is small enough that ALL jobs' cold-start
+  RAM fits at once.** For 14 jobs on 20 GB, it is NOT — it OOM-kills. Superseded by `run_capped.py`.
+- **Reserve `schedule.py`** for genuinely memory-constrained GPU sweeps. It now uses exact procfs
+  argv/PID identity, persistent attempt state, and a single-dispatcher lock; never kills before retry.
+  (But note it gates on GPU memory — extend it to CPU RAM if that's the real limit.)
 - **The dashboard driver is per-run-dir.** Switching experiments (kernel → p5a) requires restarting
-  `dashboard.sh` with the new dir, or you'll watch a stale/empty directory. A "latest active dir"
-  auto-pick would remove this footgun.
+  `dashboard.sh` with the new dir, or you'll watch a stale/empty directory.
 - **`pkill -f` with paths is dangerous** — path separators and dots are regex, and prefix out-dir
   names (`slots2` vs `slots12`) risk over-match. Anchor carefully or match on an exact, quoted token.
 - **NUL gaps in a concurrently written/truncated log are sparse-file holes**, not proof of SIGKILL.
   Check for a second process or a second `>` opener.
+- **No Python traceback + process just gone = external kill** (OOM-killer or a killer process), not an
+  in-code crash. Check `MemAvailable` history and `dmesg` first.
 - **The scheduler runs on the remote**, so a local tunnel flap cannot directly make its `pgrep`
   return empty. A local observation gap and a remote liveness failure are different events.
 

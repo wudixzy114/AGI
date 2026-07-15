@@ -33,7 +33,12 @@ def _fit_probe(X, y, cfg):
     idx = np.arange(n); np.random.RandomState(cfg.seed).shuffle(idx)
     tr, te = idx[nt:], idx[:nt]
     sc = StandardScaler().fit(X[tr])
-    clf = LogisticRegression(max_iter=200, C=1.0, n_jobs=-1).fit(sc.transform(X[tr]), y[tr])
+    # n_jobs=1 (NOT -1): the probe runs inside training jobs that are launched together, so they hit
+    # the seed-boundary probe phase in lockstep. n_jobs=-1 fork-bombs joblib workers across every job
+    # simultaneously → the notebook's process/resource cap culls them, killing jobs between seeds
+    # (P5A: 11/12 jobs died at the seed-0→1 boundary; see POSTMORTEM). lbfgs barely parallelizes
+    # anyway, so single-process costs almost nothing and is collision-proof.
+    clf = LogisticRegression(max_iter=200, C=1.0, n_jobs=1).fit(sc.transform(X[tr]), y[tr])
     return float(clf.score(sc.transform(X[te]), y[te]))
 
 
