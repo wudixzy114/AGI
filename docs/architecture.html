@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGI · 冻结基座 + 留白模块 · 架构全景</title>
+<style>
+  :root{
+    --bg:#0a0e17; --bg-2:#0c111d;
+    --panel:#111a2b; --panel-2:#0e1626; --panel-3:#0b1220;
+    --border:rgba(148,163,184,.14); --border-2:rgba(148,163,184,.26);
+    --text:#e7eef8; --muted:#93a3ba; --faint:#5d6f88;
+
+    --ice:#38bdf8;  --ice-2:#0ea5e9;  --ice-bg:rgba(56,189,248,.10); --ice-bd:rgba(56,189,248,.38);
+    --ember:#fb923c;--ember-2:#f59e0b;--ember-bg:rgba(251,146,60,.10);--ember-bd:rgba(251,146,60,.40);
+    --violet:#c084fc;--violet-2:#a855f7;--violet-bg:rgba(192,132,252,.10);--violet-bd:rgba(192,132,252,.40);
+    --green:#34d399;--green-bg:rgba(52,211,153,.10);--green-bd:rgba(52,211,153,.40);
+    --red:#fb7185;  --red-bg:rgba(251,113,133,.10); --red-bd:rgba(251,113,133,.40);
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 15% -5%, rgba(56,189,248,.08), transparent 42%),
+      radial-gradient(circle at 85% 8%, rgba(192,132,252,.07), transparent 45%),
+      radial-gradient(var(--bg-grid,rgba(148,163,184,.035)) 1px, transparent 1px);
+    background-size:auto,auto,26px 26px;
+    background-attachment:fixed;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  nav{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(10,14,23,.72);border-bottom:1px solid var(--border);
+  }
+  nav .wrap{display:flex;align-items:center;gap:8px;height:56px;flex-wrap:wrap}
+  nav .brand{font-weight:700;font-size:14px;letter-spacing:.5px;margin-right:auto;display:flex;align-items:center;gap:9px}
+  nav .brand .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--ice),var(--violet));box-shadow:0 0 12px var(--ice)}
+  nav a.link{font-size:12.5px;color:var(--muted);padding:6px 11px;border-radius:8px;transition:.18s;white-space:nowrap}
+  nav a.link:hover{color:var(--text);background:rgba(148,163,184,.08)}
+  nav a.link.active{color:var(--text);background:rgba(56,189,248,.12);box-shadow:inset 0 0 0 1px var(--ice-bd)}
+
+  header{padding:72px 0 44px;text-align:center}
+  header .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:2.5px;color:var(--ice);text-transform:uppercase;margin-bottom:18px}
+  header h1{font-size:clamp(30px,5vw,50px);line-height:1.12;margin:0 0 18px;font-weight:800;letter-spacing:-.5px}
+  header h1 .g{background:linear-gradient(120deg,var(--ice),var(--violet) 60%,var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header .thesis{max-width:680px;margin:0 auto;color:var(--muted);font-size:16.5px}
+  header .thesis b{color:var(--text);font-weight:600}
+
+  section{padding:46px 0;border-top:1px solid var(--border)}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  .sec-head .idx{font-family:var(--mono);font-size:13px;color:var(--faint)}
+  .sec-head h2{font-size:26px;margin:0;font-weight:750;letter-spacing:-.3px}
+  .sec-sub{color:var(--muted);font-size:15px;margin:0 0 28px;max-width:760px}
+
+  /* ---------- legend ---------- */
+  .legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:30px}
+  .legend .item{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:7px 14px}
+  .legend .sw{width:12px;height:12px;border-radius:4px}
+  .sw.frozen{background:var(--ice);box-shadow:0 0 10px var(--ice-bd)}
+  .sw.plastic{background:var(--ember);box-shadow:0 0 10px var(--ember-bd)}
+  .sw.mem{background:var(--violet);box-shadow:0 0 10px var(--violet-bd)}
+  .sw.proc{background:var(--green);box-shadow:0 0 10px var(--green-bd)}
+
+  /* ---------- generic nodes ---------- */
+  .diagram{display:flex;flex-direction:column;align-items:center}
+  .node{width:100%;max-width:560px;border-radius:14px;padding:16px 20px;position:relative;
+    background:var(--panel);border:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.28)}
+  .node .tt{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);font-family:var(--mono);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .node .bd{font-size:15.5px;font-weight:600}
+  .node .sub{font-size:13px;color:var(--muted);margin-top:4px;font-weight:400}
+  .node code, code.inline{font-family:var(--mono);font-size:13px;background:rgba(148,163,184,.12);padding:2px 7px;border-radius:6px;color:#cdd9ea}
+
+  .node.frozen{border-color:var(--ice-bd);background:linear-gradient(180deg,var(--ice-bg),transparent 70%),var(--panel)}
+  .node.frozen .tt{color:var(--ice)}
+  .node.plastic{border-color:var(--ember-bd);background:linear-gradient(180deg,var(--ember-bg),transparent 70%),var(--panel)}
+  .node.plastic .tt{color:var(--ember-2)}
+  .node.memory{border-color:var(--violet-bd);background:linear-gradient(180deg,var(--violet-bg),transparent 70%),var(--panel)}
+  .node.memory .tt{color:var(--violet)}
+  .node.io{max-width:440px;text-align:center;background:var(--panel-3)}
+
+  .badge{position:absolute;top:-10px;right:14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;
+    padding:3px 9px;border-radius:999px;border:1px solid var(--border-2);background:var(--bg-2);color:var(--muted)}
+  .badge.ice{color:var(--ice);border-color:var(--ice-bd)}
+  .badge.ember{color:var(--ember-2);border-color:var(--ember-bd)}
+
+  /* attached plastic chip inside a frozen box */
+  .attach{margin-top:12px;display:flex;gap:9px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:9px;border:1px dashed var(--ember-bd);
+    background:var(--ember-bg);color:var(--ember-2);display:flex;align-items:center;gap:7px}
+  .chip.ice{border-color:var(--ice-bd);background:var(--ice-bg);color:var(--ice)}
+  .chip.violet{border-style:solid;border-color:var(--violet-bd);background:var(--violet-bg);color:var(--violet)}
+  .chip.green{border-style:solid;border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+
+  /* ---------- connectors ---------- */
+  .conn{display:flex;flex-direction:column;align-items:center;padding:5px 0}
+  .conn .lbl{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:5px;background:var(--bg-2);padding:2px 8px;border-radius:6px;border:1px solid var(--border)}
+  .conn .line{width:2px;height:22px;background:linear-gradient(var(--border-2),var(--border-2))}
+  .conn .head{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--border-2);margin-top:-1px}
+
+  .shape{font-family:var(--mono);font-size:11.5px;color:var(--ice);background:rgba(56,189,248,.09);padding:1px 7px;border-radius:5px;border:1px solid var(--ice-bd)}
+
+  /* ---------- loop region ---------- */
+  .loop{position:relative;width:100%;max-width:600px;margin:6px 0;
+    border:1.5px dashed var(--ember-bd);border-radius:18px;padding:34px 20px 22px;background:linear-gradient(180deg,var(--ember-bg),transparent 55%)}
+  .loop-title{position:absolute;top:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.5px;color:var(--ember-2);background:var(--bg);padding:3px 14px;border-radius:999px;border:1px solid var(--ember-bd)}
+  .loop .return{position:absolute;left:10px;top:56px;bottom:64px;width:34px;pointer-events:none}
+  .loop .return svg{width:100%;height:100%;overflow:visible}
+  .loop-inner{display:flex;flex-direction:column;align-items:center;padding-left:26px}
+
+  /* ---------- grid cards ---------- */
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 6px 22px rgba(0,0,0,.22)}
+  .card h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:10px}
+  .card .lead{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint)}
+  .card p{margin:8px 0 0;font-size:14px;color:var(--muted)}
+  .card .arm-tag{font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 9px;border-radius:7px}
+  .tag-a{background:var(--ice-bg);color:var(--ice);border:1px solid var(--ice-bd)}
+  .tag-b{background:var(--ember-bg);color:var(--ember-2);border:1px solid var(--ember-bd)}
+  .tag-c{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+  .tag-m{background:var(--violet-bg);color:var(--violet);border:1px solid var(--violet-bd)}
+
+  /* ---------- hierarchy bands ---------- */
+  .bands{display:flex;flex-direction:column;gap:12px}
+  .band{display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:center;
+    border:1px solid var(--border);border-radius:14px;padding:16px 20px;background:var(--panel);position:relative;overflow:hidden}
+  .band::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .band.l1::before{background:var(--ember)} .band.l2::before{background:var(--violet)}
+  .band.l3::before{background:var(--green)} .band.l4::before{background:var(--ice)}
+  .band .lvl{font-weight:700;font-size:15px}
+  .band .lvl small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.5px;color:var(--faint);font-weight:400;margin-top:3px}
+  .band .map{font-size:14px;color:var(--muted)}
+  .band .map b{color:var(--text)}
+  @media(max-width:640px){.band{grid-template-columns:1fr;gap:8px}}
+
+  /* ---------- compare table ---------- */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .cmp th,.cmp td{padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+  .cmp thead th{background:var(--panel-2);font-size:12px;letter-spacing:.5px}
+  .cmp thead th:nth-child(2){color:var(--ice)} .cmp thead th:nth-child(3){color:var(--violet)}
+  .cmp tbody tr:last-child td{border-bottom:none}
+  .cmp td:first-child{color:var(--muted);font-weight:600;width:150px;background:var(--panel-3)}
+  .cmp tbody tr:hover td{background:rgba(148,163,184,.04)}
+  .cmp code{font-family:var(--mono);font-size:12.5px;background:rgba(148,163,184,.12);padding:1px 6px;border-radius:5px}
+
+  /* memory read steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--panel);border:1px solid var(--violet-bd);border-radius:14px;padding:18px;position:relative}
+  .step .n{position:absolute;top:-13px;left:16px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:13px;background:var(--violet-2);color:#160a24;box-shadow:0 0 14px var(--violet-bd)}
+  .step h4{margin:8px 0 8px;font-size:14.5px}
+  .step .code{font-family:var(--mono);font-size:12.5px;color:#d6c4f2;background:var(--panel-3);border:1px solid var(--border);border-radius:9px;padding:11px 12px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+  .step p{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+  /* slots viz */
+  .slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;justify-content:center}
+  .slot{width:58px;height:58px;border-radius:11px;border:1px dashed var(--violet-bd);background:var(--violet-bg);
+    display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--violet);position:relative}
+  .slot.filled{border-style:solid;background:linear-gradient(160deg,var(--violet-bg),transparent),var(--panel);color:var(--text);font-size:20px;font-weight:700}
+  .slot .si{position:absolute;top:-8px;left:-4px;font-size:9px;color:var(--faint)}
+
+  /* status */
+  .status{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.status{grid-template-columns:1fr}}
+  .st{border-radius:14px;padding:20px;border:1px solid var(--border);background:var(--panel)}
+  .st.ok{border-color:var(--green-bd);background:linear-gradient(180deg,var(--green-bg),transparent 60%),var(--panel)}
+  .st.warn{border-color:var(--ember-bd);background:linear-gradient(180deg,var(--ember-bg),transparent 60%),var(--panel)}
+  .st.no{border-color:var(--red-bd);background:linear-gradient(180deg,var(--red-bg),transparent 60%),var(--panel)}
+  .st .h{font-weight:700;font-size:15px;display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .st.ok .h{color:var(--green)} .st.warn .h{color:var(--ember-2)} .st.no .h{color:var(--red)}
+  .st ul{margin:0;padding-left:2px;list-style:none}
+  .st li{font-size:13.5px;color:var(--muted);padding:7px 0 7px 22px;position:relative;border-top:1px solid var(--border)}
+  .st li:first-child{border-top:none}
+  .st li::before{content:"";position:absolute;left:2px;top:14px;width:7px;height:7px;border-radius:50%}
+  .st.ok li::before{background:var(--green)} .st.warn li::before{background:var(--ember-2)} .st.no li::before{background:var(--red)}
+  .st li b{color:var(--text);font-weight:650}
+  .st li code{font-family:var(--mono);font-size:12px;color:#cdd9ea}
+
+  .note{margin-top:26px;border-left:3px solid var(--ice);background:var(--ice-bg);border-radius:0 12px 12px 0;padding:16px 20px;font-size:14px;color:var(--muted)}
+  .note b{color:var(--text)}
+  .src{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+
+  footer{padding:44px 0 70px;text-align:center;color:var(--faint);font-size:13px;border-top:1px solid var(--border)}
+  footer .mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand"><span class="dot"></span>冻结基座 · 留白模块 · 隐空间推理</span>
+    <a class="link" href="#frame">记忆层级</a>
+    <a class="link" href="#core">核心架构</a>
+    <a class="link" href="#arms">三条臂</a>
+    <a class="link" href="#memory">记忆回路</a>
+    <a class="link" href="#compare">对比 Embedding</a>
+    <a class="link" href="#status">现状</a>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">AGI Research · Architecture Overview</div>
+    <h1>把基座<span class="g">冻结</span>，在外挂上<span class="g">可塑的"留白"模块</span><br>让模型在<span class="g">连续隐空间</span>里思考与记忆</h1>
+    <p class="thesis">一个统一的<b>带巩固的记忆层级</b>：连续思考=工作记忆，记忆槽=短期记忆，过程监督=短→长的巩固，<b>冻结的 Qwen2.5=长期记忆</b>。不是一个新的 Transformer，而是把基座冻住、在它周围生长可训练结构。</p>
+    <div class="legend">
+      <span class="item"><span class="sw frozen"></span>❄ 冻结 · 不变 · 长期记忆</span>
+      <span class="item"><span class="sw plastic"></span>✎ 留白 · 变 · 可训练</span>
+      <span class="item"><span class="sw mem"></span>⬡ 记忆槽 · 短期 · 每 session 清零</span>
+      <span class="item"><span class="sw proc"></span>⊕ 过程监督 · arm C</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1 · MEMORY HIERARCHY ============ -->
+<section id="frame">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">01</span><h2>统一框架 — 带巩固的记忆层级</h2></div>
+    <p class="sec-sub">三个"看起来独立的功能"其实是一套系统：不同时间尺度的记忆，加上把短期固化成长期的巩固通路。稳定-可塑性权衡被显式拆成了"冻结基座 + 可塑留白"两半。</p>
+    <div class="bands">
+      <div class="band l1">
+        <div class="lvl">① 工作记忆 / 计算<small>WORKING MEMORY</small></div>
+        <div class="map"><b>连续思考回路（Coconut 式）</b> — 隐状态回喂 <code class="inline">thought_proj</code>，在连续空间里推理若干步，不塌缩到离散 token。</div>
+      </div>
+      <div class="band l2">
+        <div class="lvl">② 短期记忆<small>SHORT-TERM</small></div>
+        <div class="map"><b>可寻址记忆槽 <code class="inline">LatentMemory</code></b> — 一个 session 内 T 道题共享，起始清零（"留白"），逐题写入、跨题读取。</div>
+      </div>
+      <div class="band l3">
+        <div class="lvl">③ 巩固 短→长<small>CONSOLIDATION</small></div>
+        <div class="map"><b>过程监督（arm C）</b> — 让每个中间步骤可被解码，把"过程"钉进可塑权重。<span class="src">（未来：sleep 离线蒸馏 → 写回长期）</span></div>
+      </div>
+      <div class="band l4">
+        <div class="lvl">④ 长期记忆<small>LONG-TERM · FROZEN</small></div>
+        <div class="map"><b>冻结的 Qwen2.5 基座</b> — 训练中一个参数都不动，是稳定的知识底座。可塑性全部外置，避免灾难性遗忘。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 · CORE ARCHITECTURE ============ -->
+<section id="core">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">02</span><h2>核心架构 — 连续思考回路</h2></div>
+    <p class="sec-sub">主干只有一条：文本 → embedding → 冻结基座 → 取"="处隐状态 → 进入隐思考回路 → 解码答案。所有可训练的东西（LoRA、thought_proj、step_head）都是挂在这条主干上的<span style="color:var(--ember-2)">留白模块</span>。</p>
+
+    <div class="diagram">
+      <div class="node io">
+        <div class="tt">输入 · PROMPT</div>
+        <div class="bd"><code>"3 +4 −7 +2 ="</code></div>
+        <div class="sub">mod-10 多跳算术链 · 每个中间值都有精确 ground truth</div>
+      </div>
+
+      <div class="conn"><span class="lbl">token ids → 查表</span><span class="line"></span><span class="head"></span></div>
+
+      <div class="node frozen">
+        <span class="badge ice">❄ frozen</span>
+        <div class="tt">① Embedding 查表</div>
+        <div class="bd">emb = embed(input_ids)</div>
+        <div class="sub">冻结词表，静态无状态查表。<span style="color:var(--violet)">记忆回路的 <code>inject</code> 会在这里拼到序列最前 →见 §04</span></div>
+      </div>
+
+      <div class="conn"><span class="lbl">emb</span><span class="line"></span><span class="head"></span><span class="shape">(B, L, H)</span></div>
+
+      <div class="node frozen">
+        <span class="badge ice">❄ frozen</span>
+        <div class="tt">② Transformer 基座 · Qwen2.5</div>
+        <div class="bd">0.5B（本地）/ 3B（B200）· 全部 <code>requires_grad_(False)</code></div>
+        <div class="sub">"不变"的长期记忆。前向时输出 hidden states 与 past_key_values（KV cache）。</div>
+        <div class="attach">
+          <span class="chip">✎ LoRA · r=8 <span style="opacity:.7">on q/k/v/o</span></span>
+          <span class="chip ice" style="border-style:solid">唯一改动基座行为的可塑旋钮</span>
+        </div>
+      </div>
+
+      <div class="conn"><span class="lbl">取 "=" 位置的隐状态 h_last</span><span class="line"></span><span class="head"></span><span class="shape">(B, H)</span></div>
+
+      <!-- LOOP -->
+      <div class="loop">
+        <div class="loop-title">↺ 连续思考回路 · 循环 n_latent 步（= hops）</div>
+        <div class="return" aria-hidden="true">
+          <svg viewBox="0 0 34 200" preserveAspectRatio="none">
+            <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 Z" fill="#fb923c"/></marker></defs>
+            <path d="M30,188 C4,188 4,12 30,12" fill="none" stroke="#fb923c" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#ah)" opacity=".85"/>
+          </svg>
+        </div>
+        <div class="loop-inner">
+          <div class="node plastic" style="max-width:440px">
+            <span class="badge ember">✎ plastic</span>
+            <div class="tt">thought_proj · MLP</div>
+            <div class="bd">proj = W₂·GELU(W₁·h_last)</div>
+            <div class="sub">把隐状态映射回"下一步输入 embedding"的桥。近零初始化（std=1e-3），早期思考温柔扰动 → 化解冷启动死亡谷。</div>
+          </div>
+          <div class="conn"><span class="lbl">残差： t = h_last + proj（可选）</span><span class="line"></span><span class="head"></span><span class="shape">(B, 1, H)</span></div>
+          <div class="node io" style="max-width:400px">
+            <div class="tt">t 当作下一步的输入 embedding</div>
+            <div class="bd">喂回基座（复用 KV cache）→ 得到新的 h_last</div>
+            <div class="sub" style="color:var(--ember-2)">↑ 左侧虚线：new h_last 回到回路顶端，再做一次 —— 这就是"在连续空间里想 n 步"</div>
+          </div>
+          <div class="attach" style="justify-content:center;margin-top:16px">
+            <span class="chip green"><b>arm C 专属：</b> step_head(t) → 预测中间值 xᵢ（⊕ 过程监督）</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="conn"><span class="lbl">n_latent 步后 · 最后一步 logits</span><span class="line"></span><span class="head"></span></div>
+
+      <div class="node io">
+        <div class="tt">③ 解码答案</div>
+        <div class="bd">answer_logits → 限制到 N 个数字 token → digit_logits</div>
+        <div class="sub">answer CE 永远是锚点损失，防止退化成"什么都不输出"的解。</div>
+        <div class="attach" style="justify-content:center">
+          <span class="chip ice">answer_logits (B, V)</span><span class="chip ice">→ digit_logits (B, N=10)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>关键设计 — 近零初始化作为通用冷启动解药。</b>
+      <code class="inline">thought_proj</code> 与后面记忆的写投影都用 <code class="inline">std=1e-3</code> 起步，让未训练的新通路一开始"温柔"、不破坏已有结构。这是文档里"容忍婴儿期逐步成长 / 避免冷启动死亡谷"的直接落地，同一原则复用了两次。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 · THREE ARMS ============ -->
+<section id="arms">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">03</span><h2>三条实验臂 — 同一个类，不同监督</h2></div>
+    <p class="sec-sub">同一个 <code class="inline">CoconutReasoner</code>，靠 <code class="inline">n_latent</code> 与损失项区分三条臂。这是用来做消融、验证"过程 > 结果"的对照组。</p>
+    <div class="grid g3">
+      <div class="card">
+        <div class="lead">RESULT-ONLY</div>
+        <h3><span class="arm-tag tag-a">A</span> 只给答案</h3>
+        <p><code class="inline">n_latent = 0</code>。读完 "=" 直接解码答案，没有隐思考步。纯结果基线，只训练 LoRA。</p>
+        <p class="src">0.5B: 1.08M 参 · 3B: 3.69M 参</p>
+      </div>
+      <div class="card">
+        <div class="lead">LATENT</div>
+        <h3><span class="arm-tag tag-b">B</span> 隐思考 + 答案</h3>
+        <p>隐思考 <code class="inline">hops</code> 步，只用"最终答对没有"隐式奖励过程。加入 thought_proj。</p>
+        <p class="src">0.5B: 4.30M 参 · 3B: 20.47M 参</p>
+      </div>
+      <div class="card">
+        <div class="lead">LATENT + PROCESS</div>
+        <h3><span class="arm-tag tag-c">C</span> 隐思考 + 过程监督</h3>
+        <p>在 B 之上，用 step_head 要求第 i 步思考向量预测中间值 xᵢ。显式的"过程 > 结果"监督。</p>
+        <p class="src">0.5B: 4.30M 参 · 3B: 20.49M 参</p>
+      </div>
+    </div>
+    <div class="note" style="border-color:var(--green);background:var(--green-bg)">
+      <b>已被因果证实的核心结论：</b>过程监督 → 中间步骤"可被线性探针解码" → OOD 泛化。消融只改"哪些隐步受监督"，OOD 单调上升（无 0.60 &lt; 深半 0.69 &lt; 浅半 0.79 &lt; 全 0.90），探针精确镜像。跨任务（perm 查表）同样成立。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 · MEMORY CIRCUIT ============ -->
+<section id="memory">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">04</span><h2>记忆回路（Project 3）— 读是怎么接入的</h2></div>
+    <p class="sec-sub">核心手法：<b>不改基座内部，而是在输入 embedding 序列最前面多塞一个"记忆 token"</b>。基座根本不知道这多出来的位置是记忆——对它来说只是序列多了一个 token。<code class="inline">forward_problem()</code> 里，一个 session 的 T 道题共享同一组记忆槽。</p>
+
+    <h3 style="font-size:16px;margin:0 0 4px;color:var(--violet)">读取 · 三步</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h4>构造 query — 均值池化</h4>
+        <div class="code">query = mean_pool(emb · mask)
+                    # (B, H)</div>
+        <p>拿当前这道题的 token embedding 平均成一个向量，当作"我要查什么"。</p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h4>软寻址 — attention over slots</h4>
+        <div class="code">logits = (q · slotsᵀ)/√H  # (B,M)
+attn   = softmax(logits)
+read   = Σ attn · slots    # (B,H)</div>
+        <p>不是"取第 k 个槽"，而是对<b>所有槽加权平均</b>。全并行、可微，没有串行扫描 —— 直接回应了"记忆读写必须可并行"这条约束。</p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h4>翻译 — decode &amp; re-embed</h4>
+        <div class="code">probs = softmax(slot_head(read))
+soft  = probs @ 冻结词表     # (B,H)
+inject = read + soft</div>
+        <p>冻结基座用不了裸隐向量，于是把 read 解码成数字分布，<b>借基座自己的冻结词表</b>变回"软 token"，基座才认得。</p>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:26px">
+      <div class="card" style="border-color:var(--violet-bd)">
+        <h3><span style="color:var(--violet)">⬡</span> 接入点 · inject 拼到最前</h3>
+        <p style="margin-bottom:10px">读出的 <code class="inline">inject</code> 被当作序列第 0 个伪 token，拼在真实 token 之前；attention mask 同步补一位。之后每个隐思考步还会把 inject 反复加回，保证读出的值全程可用。</p>
+        <div style="font-family:var(--mono);font-size:12.5px;color:#d6c4f2;background:var(--panel-3);border:1px solid var(--border);border-radius:10px;padding:14px;line-height:1.9">
+          emb = cat([<span style="color:var(--violet)">inject</span>, emb])  <span style="color:var(--faint)"># (B, L+1, H)</span><br>
+          mask = cat([<span style="color:var(--violet)">1</span>, mask])<br>
+          out = base(inputs_embeds=emb, mask)
+        </div>
+      </div>
+      <div class="card" style="border-color:var(--violet-bd)">
+        <h3><span style="color:var(--violet)">✎</span> 写入 · 门控更新</h3>
+        <p style="margin-bottom:10px">每道题答完，把答案隐状态写进它的槽：<code class="inline">new = (1−g)·old + g·v</code>，g 是学出来的门。写投影同样近零初始化，起始温柔。</p>
+        <div style="font-family:var(--mono);font-size:12.5px;color:#d6c4f2;background:var(--panel-3);border:1px solid var(--border);border-radius:10px;padding:14px;line-height:1.9">
+          v = v_proj(ans_hidden)<br>
+          g = sigmoid(gate(ans_hidden))<br>
+          slots[write_slot] = (1−g)·old + g·v
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:28px">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:1px;margin-bottom:2px">SESSION 开始：全部清零（"留白"）→ 逐题写入</div>
+      <div class="slots">
+        <div class="slot filled">7<span class="si">s0</span></div>
+        <div class="slot filled">2<span class="si">s1</span></div>
+        <div class="slot filled">9<span class="si">s2</span></div>
+        <div class="slot">·<span class="si">s3</span></div>
+        <div class="slot">·<span class="si">s4</span></div>
+        <div class="slot">·<span class="si">s5</span></div>
+        <div class="slot">·<span class="si">s6</span></div>
+        <div class="slot">·<span class="si">s7</span></div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:14px;max-width:640px;margin-left:auto;margin-right:auto">
+        题目可用 <code class="inline">@k</code> 引用第 k 槽的答案 —— 那个数字<b>不在当前题面里</b>，所以答对引用题<b>必须</b>靠读记忆，重算上下文做不到。三条臂：<span class="arm-tag tag-m" style="font-size:11px">M0</span> 无记忆基线 · <span class="arm-tag tag-m" style="font-size:11px">M1</span> 有记忆 · <span class="arm-tag tag-m" style="font-size:11px">M2</span> +写监督。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 · COMPARE ============ -->
+<section id="compare">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">05</span><h2>和原来"单层 Embedding"的本质区别</h2></div>
+    <p class="sec-sub">表面上两者最后都变成 <code class="inline">(B, ?, H)</code> 喂给基座，但性质完全不同：一个是静态无状态查表，一个是有状态的软检索。</p>
+    <table class="cmp">
+      <thead><tr><th>维度</th><th>原来 · self.embed(input_ids)</th><th>新增 · memory.read(query)</th></tr></thead>
+      <tbody>
+        <tr><td>信息来自哪</td><td>当前输入文本的 token id</td><td><b style="color:var(--text)">之前题目写入槽里的答案</b> — 引用题里根本没有那个数字</td></tr>
+        <tr><td>寻址方式</td><td>硬查表：id → 词表第 id 行</td><td>软寻址：query 与所有槽算相似度，<code>softmax</code> 加权和（连续可微）</td></tr>
+        <tr><td>状态</td><td>无状态。同一 id 永远查出同一行</td><td><b style="color:var(--text)">有状态</b>。每 session 清零，逐题写入、跨题演化</td></tr>
+        <tr><td>可训练</td><td>词表冻结，不训练</td><td>q / r / v / gate 投影都可训练（属于"留白"）</td></tr>
+        <tr><td>对基座是否"母语"</td><td><b style="color:var(--ice)">是</b>。天然就是它自己的词表向量</td><td><b style="color:var(--red)">不是</b>。是"外来"向量，必须翻译回词表空间才肯消费</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <b>最深的一层差别：</b>embedding 出来的东西天生是基座的"母语"，而记忆读出来的是"外语"。这正是第 3 步 <code class="inline">decode-and-re-embed</code> 存在的原因，也是记忆这条线比隐推理更难调的坎——多了一道"让冻结基座接受外来信息"的关。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6 · STATUS ============ -->
+<section id="status">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">06</span><h2>诚实的现状 — 哪些成立，哪些还没跑</h2></div>
+    <p class="sec-sub">架构完整不等于结论成立。这里区分已被多种子/因果消融证实的、已被撤回的、以及代码就绪但还没有结果的部分。</p>
+    <div class="status">
+      <div class="st ok">
+        <div class="h">✓ 已证实</div>
+        <ul>
+          <li><b>课程学习救活隐推理</b>：均匀难度下 B/C 塌到随机，浅→深课程后才活。</li>
+          <li><b>过程监督 → 可解码 → OOD 是因果的</b>：消融 + 探针镜像，最硬的结论。</li>
+          <li><b>跨任务稳健</b>：perm 查表上 A/B 随机、C 保持 3× chance。</li>
+          <li>0.5B 与 3B、多种子（error bar）均复现。</li>
+        </ul>
+      </div>
+      <div class="st warn">
+        <div class="h">⟳ 已撤回 / 需谨慎</div>
+        <ul>
+          <li><b>"3B 规模反转、隐推理更差"</b>是单种子假象；多种子下 <code>A ≈ B</code>。</li>
+          <li>OOD 的<b>绝对幅度</b>对种子敏感，需 ≥5 种子；in-dist 无噪声。</li>
+          <li>残差 ≠ 课程：残差修可训练性，但只有课程给出干净可解码链。</li>
+        </ul>
+      </div>
+      <div class="st no">
+        <div class="h">○ 代码就绪 · 未验证</div>
+        <ul>
+          <li><b>Project 3 记忆机制</b>：<code>outputs/</code> 里还没有任何 session/memory 结果。</li>
+          <li><code>diag_read.py</code> 透露正卡在："读得出（可解码）但冻结基座用不了它"。</li>
+          <li><code>read + soft_read</code> 双通道是<b>为绕过该 bug 刚加的方案，尚未跑通</b>。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note" style="border-color:var(--ember-2);background:var(--ember-bg)">
+      <b>两个悬而未决的 crux：</b>
+      <b>(A) 自进化的驱动信号</b> — 没有 grounding 锚点，迭代自训练会塌；任务的可验证答案是天然锚点。
+      <b>(B) 可观测性</b> — 隐推理 + 漂移权重 + 隐记忆三者叠加会共同摧毁探针方法论，必须从设计上守住"槽/思考向量可被线性解码"这条红线。
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">CoconutReasoner · frozen Qwen2.5 + LoRA + thought_proj + LatentMemory</div>
+    <div style="margin-top:8px">架构全景 · 冻结基座 + 留白模块 + 连续隐空间推理 + 带巩固的记忆层级</div>
+  </div>
+</footer>
+
+<script>
+  // nav active-section highlight
+  const links=[...document.querySelectorAll('nav a.link')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('active'));
+      const a=map.get(e.target.id); if(a)a.classList.add('active');
+    }});
+  },{rootMargin:'-45% 0px -50% 0px'});
+  document.querySelectorAll('section[id]').forEach(s=>io.observe(s));
+</script>
+</body>
+</html>

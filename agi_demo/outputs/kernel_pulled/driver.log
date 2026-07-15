@@ -1,0 +1,21 @@
+########## BATCH 1: session hops-sweep ##########
+===== 10:19:27  START agi_demo/outputs/kernel/session_hops0  flags: --session --session-hops 0 --session-len 6 --n-slots 8 --steps 1500 --lr 3e-3 =====
+===== 10:19:27  START agi_demo/outputs/kernel/session_hops1  flags: --session --session-hops 1 --session-len 6 --n-slots 8 --steps 2500 --lr 3e-3 =====
+===== 10:19:27  START agi_demo/outputs/kernel/session_hops2  flags: --session --session-hops 2 --session-len 6 --n-slots 8 --steps 4000 --lr 3e-3 =====
+===== 10:27:04  DONE agi_demo/outputs/kernel/session_hops0 =====
+===== 10:33:20  DONE agi_demo/outputs/kernel/session_hops1 =====
+===== 10:43:14  DONE agi_demo/outputs/kernel/session_hops2 =====
+########## BATCH 2: multi-seed + delta ablation ##########
+===== 10:43:14  START agi_demo/outputs/kernel/session_seeds  flags: --session --session-hops 0 --session-len 6 --n-slots 8 --steps 1500 --lr 3e-3 --seeds 0,1,2,3,4 =====
+===== 10:43:14  START agi_demo/outputs/kernel/session_hebbian  flags: --session --session-hops 1 --session-len 6 --n-slots 8 --steps 2500 --lr 3e-3 --no-delta =====
+===== 10:53:35  DONE agi_demo/outputs/kernel/session_hebbian =====
+===== 11:09:20  DONE agi_demo/outputs/kernel/session_seeds =====
+########## BATCH 3: long-session recall ##########
+===== 11:09:20  START agi_demo/outputs/kernel/session_long  flags: --session --session-hops 0 --session-len 10 --n-slots 12 --steps 2500 --lr 3e-3 =====
+===== 11:22:22  DONE agi_demo/outputs/kernel/session_long =====
+########## BATCH 4: arith length-gen ##########
+===== 11:22:22  START agi_demo/outputs/kernel/arith_curric  flags: --arith --arm K1 --curriculum --train-hops 1,2,3,4 --eval-hops 1,2,3,4,5,6,7,8 --steps 8000 --lr 2e-3 --curriculum-patience 800 =====
+===== 11:22:22  START agi_demo/outputs/kernel/arith_uniform  flags: --arith --arm K1 --train-hops 1,2,3,4 --eval-hops 1,2,3,4,5,6,7,8 --steps 8000 --lr 2e-3 =====
+===== 11:22:23  DONE agi_demo/outputs/kernel/arith_curric =====
+===== 11:25:46  DONE agi_demo/outputs/kernel/arith_uniform =====
+ALL_KERNEL_DONE 11:25:46

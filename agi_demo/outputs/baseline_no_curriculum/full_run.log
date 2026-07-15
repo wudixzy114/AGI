@@ -1,0 +1,90 @@
+
+============================================================
+ARM A
+============================================================
+[arm A] trainable params: 1,081,344 | device=mps
+  step   50/1000 | hops=3 | loss=2.254 ans=2.254 proc=0.000 | ema_acc=0.077
+  step  100/1000 | hops=3 | loss=2.325 ans=2.325 proc=0.000 | ema_acc=0.111
+  step  150/1000 | hops=2 | loss=0.750 ans=0.750 proc=0.000 | ema_acc=0.272
+  step  200/1000 | hops=4 | loss=2.036 ans=2.036 proc=0.000 | ema_acc=0.454
+  step  250/1000 | hops=1 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.540
+  step  300/1000 | hops=3 | loss=1.234 ans=1.234 proc=0.000 | ema_acc=0.572
+  step  350/1000 | hops=3 | loss=0.834 ans=0.834 proc=0.000 | ema_acc=0.614
+  step  400/1000 | hops=3 | loss=0.785 ans=0.785 proc=0.000 | ema_acc=0.636
+  step  450/1000 | hops=2 | loss=0.052 ans=0.052 proc=0.000 | ema_acc=0.639
+  step  500/1000 | hops=2 | loss=0.205 ans=0.205 proc=0.000 | ema_acc=0.679
+  step  550/1000 | hops=3 | loss=1.069 ans=1.069 proc=0.000 | ema_acc=0.660
+  step  600/1000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.723
+  step  650/1000 | hops=4 | loss=1.667 ans=1.667 proc=0.000 | ema_acc=0.721
+  step  700/1000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.727
+  step  750/1000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.719
+  step  800/1000 | hops=2 | loss=0.096 ans=0.096 proc=0.000 | ema_acc=0.712
+  step  850/1000 | hops=4 | loss=1.447 ans=1.447 proc=0.000 | ema_acc=0.675
+  step  900/1000 | hops=2 | loss=0.015 ans=0.015 proc=0.000 | ema_acc=0.719
+  step  950/1000 | hops=4 | loss=1.568 ans=1.568 proc=0.000 | ema_acc=0.719
+  step 1000/1000 | hops=2 | loss=0.075 ans=0.075 proc=0.000 | ema_acc=0.743
+[arm A] acc_by_hops: 1:1.00, 2:1.00, 3:0.72, 4:0.34, 5:0.15, 6:0.04
+
+============================================================
+ARM B
+============================================================
+[arm B] trainable params: 4,295,296 | device=mps
+  step   50/1000 | hops=3 | loss=2.413 ans=2.413 proc=0.000 | ema_acc=0.064
+  step  100/1000 | hops=3 | loss=2.311 ans=2.311 proc=0.000 | ema_acc=0.091
+  step  150/1000 | hops=2 | loss=2.304 ans=2.304 proc=0.000 | ema_acc=0.101
+  step  200/1000 | hops=4 | loss=2.282 ans=2.282 proc=0.000 | ema_acc=0.110
+  step  250/1000 | hops=1 | loss=2.307 ans=2.307 proc=0.000 | ema_acc=0.107
+  step  300/1000 | hops=3 | loss=2.312 ans=2.312 proc=0.000 | ema_acc=0.101
+  step  350/1000 | hops=3 | loss=2.303 ans=2.303 proc=0.000 | ema_acc=0.102
+  step  400/1000 | hops=3 | loss=2.295 ans=2.295 proc=0.000 | ema_acc=0.099
+  step  450/1000 | hops=2 | loss=2.309 ans=2.309 proc=0.000 | ema_acc=0.107
+  step  500/1000 | hops=2 | loss=2.285 ans=2.285 proc=0.000 | ema_acc=0.110
+  step  550/1000 | hops=3 | loss=2.342 ans=2.342 proc=0.000 | ema_acc=0.096
+  step  600/1000 | hops=1 | loss=2.112 ans=2.112 proc=0.000 | ema_acc=0.102
+  step  650/1000 | hops=4 | loss=2.290 ans=2.290 proc=0.000 | ema_acc=0.111
+  step  700/1000 | hops=1 | loss=2.224 ans=2.224 proc=0.000 | ema_acc=0.100
+  step  750/1000 | hops=1 | loss=1.894 ans=1.894 proc=0.000 | ema_acc=0.117
+  step  800/1000 | hops=2 | loss=2.297 ans=2.297 proc=0.000 | ema_acc=0.123
+  step  850/1000 | hops=4 | loss=2.317 ans=2.317 proc=0.000 | ema_acc=0.110
+  step  900/1000 | hops=2 | loss=2.306 ans=2.306 proc=0.000 | ema_acc=0.122
+  step  950/1000 | hops=4 | loss=2.281 ans=2.281 proc=0.000 | ema_acc=0.130
+  step 1000/1000 | hops=2 | loss=2.333 ans=2.333 proc=0.000 | ema_acc=0.156
+[arm B] acc_by_hops: 1:0.30, 2:0.12, 3:0.10, 4:0.07, 5:0.12, 6:0.08
+[arm B] probe(hops=4) per-step: x1:0.57, x2:0.14, x3:0.12, x4:0.10  (chance=0.10)
+
+============================================================
+ARM C
+============================================================
+[arm C] trainable params: 4,304,266 | device=mps
+  step   50/1000 | hops=3 | loss=2.358 ans=2.294 proc=2.607 | ema_acc=0.057
+  step  100/1000 | hops=3 | loss=2.429 ans=2.310 proc=2.401 | ema_acc=0.080
+  step  150/1000 | hops=2 | loss=2.479 ans=2.302 proc=2.372 | ema_acc=0.089
+  step  200/1000 | hops=4 | loss=2.522 ans=2.285 proc=2.384 | ema_acc=0.108
+  step  250/1000 | hops=1 | loss=2.542 ans=2.302 proc=2.399 | ema_acc=0.108
+  step  300/1000 | hops=3 | loss=2.540 ans=2.305 proc=2.347 | ema_acc=0.094
+  step  350/1000 | hops=3 | loss=2.543 ans=2.305 proc=2.380 | ema_acc=0.098
+  step  400/1000 | hops=3 | loss=2.530 ans=2.292 proc=2.380 | ema_acc=0.104
+  step  450/1000 | hops=2 | loss=2.508 ans=2.321 proc=1.873 | ema_acc=0.108
+  step  500/1000 | hops=2 | loss=2.491 ans=2.307 proc=1.836 | ema_acc=0.116
+  step  550/1000 | hops=3 | loss=2.534 ans=2.338 proc=1.959 | ema_acc=0.135
+  step  600/1000 | hops=1 | loss=0.595 ans=0.524 proc=0.712 | ema_acc=0.222
+  step  650/1000 | hops=4 | loss=2.483 ans=2.291 proc=1.922 | ema_acc=0.241
+  step  700/1000 | hops=1 | loss=1.695 ans=1.566 proc=1.289 | ema_acc=0.311
+  step  750/1000 | hops=1 | loss=0.435 ans=0.393 proc=0.424 | ema_acc=0.327
+  step  800/1000 | hops=2 | loss=2.406 ans=2.292 proc=1.133 | ema_acc=0.306
+  step  850/1000 | hops=4 | loss=2.498 ans=2.312 proc=1.866 | ema_acc=0.242
+  step  900/1000 | hops=2 | loss=2.473 ans=2.298 proc=1.755 | ema_acc=0.265
+  step  950/1000 | hops=4 | loss=2.468 ans=2.292 proc=1.763 | ema_acc=0.304
+  step 1000/1000 | hops=2 | loss=2.403 ans=2.271 proc=1.328 | ema_acc=0.357
+[arm C] acc_by_hops: 1:0.98, 2:0.16, 3:0.12, 4:0.09, 5:0.11, 6:0.07
+[arm C] probe(hops=4) per-step: x1:1.00, x2:0.25, x3:0.11, x4:0.11  (chance=0.10)
+
+wrote agi_demo/outputs/metrics.json
+wrote figures to agi_demo/outputs/
+
+============================================================
+SUMMARY
+============================================================
+arm A: params=1,081,344 | OOD acc(hops [5, 6])=[0.15, 0.04]
+arm B: params=4,295,296 | OOD acc(hops [5, 6])=[0.12, 0.08] | probe last-step=0.10 (chance 0.10)
+arm C: params=4,304,266 | OOD acc(hops [5, 6])=[0.11, 0.07] | probe last-step=0.11 (chance 0.10)

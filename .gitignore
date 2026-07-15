@@ -1,0 +1,21 @@
+# --- Large binaries: never commit (pulled/generated locally) ---
+.venv/
+models/
+
+# --- Result archives: regenerated on demand; the results themselves are tracked under agi_demo/outputs/ ---
+archives/
+
+# --- Python junk ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- OS / editor junk ---
+.DS_Store
+*.swp
+
+# --- Local dashboard render target (written to /tmp, but ignore any stray local copy) ---
+/tmp/
+agi_live/
+agi_dashboard/

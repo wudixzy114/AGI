@@ -1,0 +1,27 @@
+
+============================================================
+ARM M2
+============================================================
+[arm M2] trainable: 33,081,355 | device=cuda | memory=on | session
+  step   50/600 | loss=3.918 | acc=0.124 ref=0.126 lit=0.122 mem=2.427 | ref_ema=0.093
+  step  100/600 | loss=3.823 | acc=0.102 ref=0.087 lit=0.113 mem=2.318 | ref_ema=0.098
+  step  150/600 | loss=3.508 | acc=0.180 ref=0.099 lit=0.233 mem=2.315 | ref_ema=0.097
+  step  200/600 | loss=1.754 | acc=0.628 ref=0.089 lit=0.998 mem=1.042 | ref_ema=0.099
+  step  250/600 | loss=3.269 | acc=0.242 ref=0.076 lit=0.350 mem=2.058 | ref_ema=0.099
+  step  300/600 | loss=3.169 | acc=0.254 ref=0.102 lit=0.370 mem=2.051 | ref_ema=0.102
+  step  350/600 | loss=3.110 | acc=0.238 ref=0.070 lit=0.373 mem=1.958 | ref_ema=0.097
+  step  400/600 | loss=2.137 | acc=0.503 ref=0.080 lit=0.795 mem=1.274 | ref_ema=0.098
+  step  450/600 | loss=1.675 | acc=0.615 ref=0.075 lit=0.998 mem=0.987 | ref_ema=0.096
+  step  500/600 | loss=1.680 | acc=0.611 ref=0.074 lit=1.000 mem=1.018 | ref_ema=0.096
+  step  550/600 | loss=1.698 | acc=0.616 ref=0.098 lit=1.000 mem=0.999 | ref_ema=0.101
+  step  600/600 | loss=1.653 | acc=0.615 ref=0.084 lit=1.000 mem=0.990 | ref_ema=0.098
+[arm M2] lit_acc=1.000 ref_acc=0.087 (chance 0.10) delay_acc={1: 0.07, 2: 0.11, 3: 0.09, 4: 0.07, 5: 0.11}
+[arm M2] memory-slot probe: 0.620 (chance 0.10)
+
+wrote agi_demo/outputs/3b_unfreeze/unfreeze_0/metrics.json
+
+============================================================
+SESSION SUMMARY (short-term memory)
+============================================================
+arm M2: ref_acc=0.09 lit_acc=1.00 (chance 0.10) | mem-probe=0.62
+Reading: ref_acc >> chance ⇒ memory read works; mem-probe >> chance ⇒ slots observably hold the value (the red line we must preserve).

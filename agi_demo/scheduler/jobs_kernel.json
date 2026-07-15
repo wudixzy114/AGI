@@ -1,0 +1,24 @@
+{
+  "_comment": "Declarative job matrix for the resource-aware scheduler. Replaces run_kernel.sh's hand-batched &/wait. The scheduler packs these onto the GPU by measured headroom — no manual batching. To change the sweep, edit THIS file only. est_mem_mb is a conservative per-job VRAM estimate used for admission; priority orders the queue (higher first).",
+  "base_cmd": "/opt/conda/bin/python -u -m agi_demo.kernel.run --d-model 128 --d-state 64 --n-layers 4 --decays 0,0.7,0.95,0.99 --batch-size 128 --device cuda",
+  "out_base": "agi_demo/outputs/kernel_sched",
+  "defaults": {"est_mem_mb": 6000},
+  "jobs": [
+    {"name": "session_hops0", "priority": 10, "est_mem_mb": 5000,
+     "args": ["--session", "--session-hops", "0", "--session-len", "6", "--n-slots", "8", "--steps", "1500", "--lr", "3e-3"]},
+    {"name": "session_hops1", "priority": 9, "est_mem_mb": 5000,
+     "args": ["--session", "--session-hops", "1", "--session-len", "6", "--n-slots", "8", "--steps", "2500", "--lr", "3e-3"]},
+    {"name": "session_hops2", "priority": 5, "est_mem_mb": 6000,
+     "args": ["--session", "--session-hops", "2", "--session-len", "6", "--n-slots", "8", "--steps", "4000", "--lr", "3e-3"]},
+    {"name": "session_seeds", "priority": 8, "est_mem_mb": 5000,
+     "args": ["--session", "--session-hops", "0", "--session-len", "6", "--n-slots", "8", "--steps", "1500", "--lr", "3e-3", "--seeds", "0,1,2,3,4"]},
+    {"name": "session_hebbian", "priority": 6, "est_mem_mb": 5000,
+     "args": ["--session", "--session-hops", "1", "--session-len", "6", "--n-slots", "8", "--steps", "2500", "--lr", "3e-3", "--no-delta"]},
+    {"name": "session_long", "priority": 7, "est_mem_mb": 7000,
+     "args": ["--session", "--session-hops", "0", "--session-len", "10", "--n-slots", "12", "--steps", "2500", "--lr", "3e-3"]},
+    {"name": "arith_curric", "priority": 3, "est_mem_mb": 8000,
+     "args": ["--arith", "--arm", "K1", "--curriculum", "--train-hops", "1,2,3,4", "--eval-hops", "1,2,3,4,5,6,7,8", "--steps", "8000", "--lr", "2e-3", "--curriculum-patience", "800"]},
+    {"name": "arith_uniform", "priority": 3, "est_mem_mb": 8000,
+     "args": ["--arith", "--arm", "K1", "--train-hops", "1,2,3,4", "--eval-hops", "1,2,3,4,5,6,7,8", "--steps", "8000", "--lr", "2e-3"]}
+  ]
+}

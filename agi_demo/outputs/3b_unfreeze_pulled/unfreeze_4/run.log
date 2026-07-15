@@ -1,0 +1,14 @@
+
+============================================================
+ARM M2
+============================================================
+[arm M2] trainable: 341,389,323 | device=cuda | memory=on | session
+  step   50/600 | loss=1.827 | acc=0.635 ref=0.097 lit=1.000 mem=0.972 | ref_ema=0.091
+  step  100/600 | loss=1.892 | acc=0.609 ref=0.099 lit=1.000 mem=1.008 | ref_ema=0.097
+  step  150/600 | loss=1.610 | acc=0.646 ref=0.105 lit=1.000 mem=0.962 | ref_ema=0.098
+  step  200/600 | loss=1.624 | acc=0.617 ref=0.061 lit=1.000 mem=0.960 | ref_ema=0.095
+  step  250/600 | loss=1.560 | acc=0.654 ref=0.119 lit=1.000 mem=0.909 | ref_ema=0.100
+  step  300/600 | loss=1.699 | acc=0.607 ref=0.093 lit=1.000 mem=1.029 | ref_ema=0.103
+  step  350/600 | loss=1.872 | acc=0.608 ref=0.120 lit=1.000 mem=1.049 | ref_ema=0.100
+  step  400/600 | loss=1.600 | acc=0.629 ref=0.092 lit=1.000 mem=0.956 | ref_ema=0.100
+  step  450/600 | loss=2.611 | acc=0.411 ref=0.125 lit=0.615 mem=1.639 | ref_ema=0.101

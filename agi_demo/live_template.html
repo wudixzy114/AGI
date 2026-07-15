@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>3B run — live</title>
+<meta http-equiv="refresh" content="6">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;margin:24px;background:#fafafa;color:#222}
+h1{font-size:18px;margin-bottom:4px}
+.meta{color:#555;font-size:13px;margin-bottom:16px;line-height:1.6}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:14px}
+code{background:#eee;padding:2px 6px;border-radius:4px;font-size:12px}
+.steps{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#444;white-space:pre;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px;margin-bottom:20px;overflow-x:auto}
+</style>
+</head>
+<body>
+<h1>3B causal-ablation run &mdash; live</h1>
+<div class="meta" id="meta"></div>
+<div class="steps" id="steps"></div>
+<div class="grid" id="grid"></div>
+<script>
+// The dashboard loop replaces the token below with the pulled JSON (data is inlined, no fetch).
+var S = {"ts":"","gpu":"","active":[],"live":{},"configs":{}}; //__STATE__
+var COL = {A:'#8a8a8a', B:'#2b6cb0', C:'#c05621'};
+
+// Human-readable names so the legends/titles explain themselves.
+var ARM = {
+  A: 'A · result-only (no latent thinking, plain SFT baseline)',
+  B: 'B · latent thinking (answer supervision only)',
+  C: 'C · latent + process supervision (supervise intermediate steps)'
+};
+var CFG = {
+  causal_none:        'Causal ablation — NO process supervision (= arm B)',
+  causal_first_half:  'Causal ablation — supervise only SHALLOW half of the chain',
+  causal_second_half: 'Causal ablation — supervise only DEEP half of the chain',
+  causal_all:         'Causal ablation — supervise the FULL chain',
+  seeds_A:  '3-seed robustness — arm A (mean ± spread across seeds)',
+  seeds_B:  '3-seed robustness — arm B',
+  seeds_C:  '3-seed robustness — arm C',
+  perm_A:   'Second task (multi-hop lookup) — arm A',
+  perm_B:   'Second task (multi-hop lookup) — arm B',
+  perm_C:   'Second task (multi-hop lookup) — arm C'
+};
+function cfgLabel(n){ return CFG[n] || n; }
+function trainMax(m){ var t=(m.config&&m.config.train_hops)||[]; return t.length?Math.max.apply(null,t):null; }
+
+var activeList = Array.isArray(S.active) ? S.active : (S.active && S.active !== 'none' ? [S.active] : []);
+var activeNames = activeList.map(cfgLabel).join('  +  ') || 'none';
+document.getElementById('meta').innerHTML =
+  'updated <b>' + (S.ts || '?') + '</b> &middot; GPU ' + (S.gpu || '?') +
+  ' &middot; now training (' + activeList.length + ' in parallel): <code>' + activeNames + '</code>' +
+  '<br><span style="color:#888">Arms — ' +
+  '<b style="color:#8a8a8a">A</b>: result-only baseline &nbsp;|&nbsp; ' +
+  '<b style="color:#2b6cb0">B</b>: latent thinking &nbsp;|&nbsp; ' +
+  '<b style="color:#c05621">C</b>: latent + process supervision. &nbsp; ' +
+  'Higher hop count = deeper reasoning; the dashed line marks where evaluation goes ' +
+  'beyond the trained depth (out-of-distribution).</span>';
+
+// live training log — concatenate each active config's latest lines
+var live = S.live || {};
+var logTxt = '';
+activeList.forEach(function(name){
+  var L = live[name] || {};
+  logTxt += cfgLabel(name) + ':\n' +
+    ((L.steps && L.steps.length) ? L.steps.join('\n') : '  (waiting for step logs…)') + '\n\n';
+});
+document.getElementById('steps').textContent =
+  'LIVE training log:\n' + (logTxt || '  (waiting…)');
+
+var grid = document.getElementById('grid');
+
+// one live progress curve per active (parallel) config
+activeList.forEach(function(name){
+  var L = live[name] || {};
+  if (!(L.progress && L.progress.length)) return;
+  var card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<b>Live: ' + cfgLabel(name) + '</b>' +
+    '<div style="color:#888;font-size:12px;margin:2px 0 6px">' +
+    'running-average training accuracy as steps advance (should climb toward 1.0)</div>';
+  var cv = document.createElement('canvas');
+  card.appendChild(cv);
+  grid.appendChild(card);
+  new Chart(cv, {
+    type: 'line',
+    data: (function(){
+      // Split progress into segments wherever the step number drops (a new seed restarts at ~50).
+      // Otherwise the 3 seeds of a --seeds run get drawn as one sawtooth line ("continues drawing").
+      var segs = [], cur = [];
+      var prev = -1;
+      L.progress.forEach(function(p){
+        if (p[0] < prev) { if (cur.length) segs.push(cur); cur = []; }
+        cur.push(p); prev = p[0];
+      });
+      if (cur.length) segs.push(cur);
+      var palette = ['#2b6cb0','#c05621','#2f855a','#805ad5','#b7791f'];
+      var multi = segs.length > 1;
+      // union of all step values as x labels; each seg maps its own points, nulls elsewhere
+      var xs = []; segs.forEach(function(s){ s.forEach(function(p){ if (xs.indexOf(p[0])<0) xs.push(p[0]); }); });
+      xs.sort(function(a,b){ return a-b; });
+      var datasets = segs.map(function(s, i){
+        var m = {}; s.forEach(function(p){ m[p[0]] = p[1]; });
+        return { label: multi ? ('seed '+i) : 'training accuracy (EMA)',
+          data: xs.map(function(x){ return (m[x]!=null)?m[x]:null; }),
+          borderColor: palette[i % palette.length], tension:0.2, pointRadius:0, spanGaps:true };
+      });
+      return { labels: xs, datasets: datasets };
+    })(),
+    options: { animation:false, plugins:{legend:{display:true,labels:{boxWidth:12}}},
+      scales:{ y:{min:0,max:1,title:{display:true,text:'training accuracy (EMA)'}},
+        x:{title:{display:true,text:'training step (per seed)'}} } }
+  });
+});
+
+// finished-config accuracy-vs-hop curves
+Object.keys(S.configs || {}).forEach(function(name){
+  var m = S.configs[name];
+  var arms = m.arms || {};
+  var labelSet = {};
+  Object.keys(arms).forEach(function(a){
+    Object.keys(arms[a].acc_by_hops || {}).forEach(function(h){ labelSet[+h] = 1; });
+  });
+  var xs = Object.keys(labelSet).map(Number).sort(function(a,b){ return a-b; });
+  if (!xs.length) return;
+  var card = document.createElement('div');
+  card.className = 'card';
+  var tmax = trainMax(m);
+  card.innerHTML = '<b>' + cfgLabel(name) + '</b>' +
+    '<div style="color:#888;font-size:12px;margin:2px 0 6px">' +
+    'answer accuracy vs reasoning depth' +
+    (tmax ? ' &mdash; trained to ' + tmax + ' hops; points past the dashed line are out-of-distribution' : '') +
+    '</div>';
+  var cv = document.createElement('canvas');
+  card.appendChild(cv);
+  grid.appendChild(card);
+  var ds = Object.keys(arms).map(function(arm){
+    var v = arms[arm];
+    return { label:(ARM[arm]||arm), borderColor:COL[arm]||'#333', backgroundColor:COL[arm]||'#333',
+      data:xs.map(function(h){ var a=v.acc_by_hops||{}; return (a[h]!=null)?a[h]:null; }),
+      tension:0.2, spanGaps:true };
+  });
+  // chance line (1/modulus) as a reference dataset so the legend explains it
+  var mod = (m.config && m.config.modulus) || 10;
+  ds.push({ label:'chance (random guessing = 1/'+mod+')', data:xs.map(function(){ return 1/mod; }),
+    borderColor:'#e53e3e', borderDash:[4,4], pointRadius:0, borderWidth:1 });
+  new Chart(cv, {
+    type:'line',
+    data:{ labels:xs, datasets:ds },
+    options:{ animation:false, plugins:{legend:{labels:{boxWidth:14,font:{size:11}}}},
+      scales:{ y:{min:0,max:1,title:{display:true,text:'answer exact-match accuracy'}},
+        x:{title:{display:true,text:'hop count (reasoning depth)'}} } }
+  });
+});
+
+if (!Object.keys(S.configs || {}).length && !grid.children.length) {
+  grid.innerHTML = '<div class="meta">no finished configs yet &mdash; first metrics.json is written at ~30 min.</div>';
+}
+</script>
+</body>
+</html>

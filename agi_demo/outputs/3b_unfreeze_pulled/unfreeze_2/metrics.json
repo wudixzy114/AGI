@@ -1,0 +1,54 @@
+{
+  "config": {
+    "model_id": "/media/cfs/9n-das-admin/llm_models/Qwen2.5-3B-Instruct",
+    "device": "cuda",
+    "modulus": 10,
+    "train_hops": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "eval_hops": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "train_steps": 600,
+    "batch_size": 128,
+    "curriculum": false,
+    "residual_thought": false,
+    "lora_r": 8,
+    "dtype": "bfloat16",
+    "task": "session",
+    "process_steps": "all",
+    "session_len": 6,
+    "n_slots": 8,
+    "ref_prob": 0.5,
+    "seeds": [
+      0
+    ]
+  },
+  "arms": {
+    "M2": {
+      "trainable_params": 187235339,
+      "lit_acc": 0.09161576901721266,
+      "ref_acc": 0.08811959087332809,
+      "chance": 0.1,
+      "delay_acc": {
+        "1": 0.09446254071661238,
+        "2": 0.07913669064748201,
+        "3": 0.06930693069306931,
+        "4": 0.12173913043478261,
+        "5": 0.06451612903225806
+      },
+      "memory_probe": {
+        "slot_probe_acc": 0.09479166666666666,
+        "chance": 0.1
+      }
+    }
+  }
+}

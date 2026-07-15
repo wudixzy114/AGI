@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGI kernel — training monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="chart.umd.min.js"></script>
+<style>
+/* ---- dataviz palette (validated): light + selected dark, swapped in one place ---- */
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --border:rgba(11,11,11,0.10);
+  --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+  --k0:#898781;         /* control arm = muted gray by design (not a categorical slot) */
+  --k1:#2a78d6;         /* series slot 1 (blue) */
+  --k2:#eb6834;         /* series slot 8 (orange) — worst-adjacent CVD to blue is large */
+  --good:#006300; --warn:#b7791f; --crit:#d03b3b; --chance:#d03b3b;
+  /* sequential blue ramp (for the timescale fan: γ small->large = light->dark) */
+  --s1:#cde2fb; --s2:#86b6ef; --s3:#3987e5; --s4:#256abf; --s5:#104281;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --border:rgba(255,255,255,0.10);
+  --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781; --grid:#2c2c2a; --axis:#383835;
+  --k0:#898781; --k1:#3987e5; --k2:#d95926;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --chance:#e66767;
+  --s1:#0d366b; --s2:#184f95; --s3:#256abf; --s4:#3987e5; --s5:#86b6ef;
+}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:var(--page);
+  color:var(--ink);font-size:14px;line-height:1.5}
+header{position:sticky;top:0;z-index:10;background:var(--page);border-bottom:1px solid var(--border);
+  padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-0.01em}
+.pill{font-size:12px;color:var(--ink2);background:var(--surface);border:1px solid var(--border);
+  border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums}
+.pill b{color:var(--ink);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.spacer{flex:1}
+button#theme{font:inherit;font-size:12px;color:var(--ink2);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer}
+.refresh-ctl{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px 6px 3px 10px}
+.refresh-ctl #refresh-count{font-variant-numeric:tabular-nums;color:var(--muted);min-width:26px;text-align:right}
+.refresh-ctl select{font:inherit;font-size:12px;color:var(--ink);background:transparent;border:0;cursor:pointer;outline:none;padding:2px}
+.refresh-ctl select option{background:var(--surface);color:var(--ink)}
+button#reload-now{font:inherit;font-size:13px;line-height:1;color:var(--ink2);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer}
+button#reload-now:hover,button#theme:hover{color:var(--ink);border-color:var(--border-2,var(--muted))}
+main{padding:20px 22px;max-width:1400px;margin:0 auto}
+.section-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;
+  letter-spacing:0.06em;margin:26px 4px 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 16px 12px}
+.card h3{margin:0;font-size:14px;font-weight:620}
+.card .sub{color:var(--ink2);font-size:12px;margin:3px 0 2px}
+.card .kernel{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;margin-bottom:8px}
+.canvas-wrap{position:relative;height:250px}
+.canvas-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.headline{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:2px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;min-width:150px}
+.tile .lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+.tile .val{font-size:30px;font-weight:680;letter-spacing:-0.02em;margin-top:3px;font-variant-numeric:tabular-nums}
+.tile .note{font-size:11px;color:var(--ink2);margin-top:2px}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink2);
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+  white-space:pre-wrap;word-break:break-word;margin-top:6px}
+.bar-out{height:5px;background:var(--grid);border-radius:99px;overflow:hidden;margin-top:8px}
+.bar-in{height:100%;background:var(--k1);border-radius:99px;transition:width .4s}
+.empty{color:var(--muted);padding:30px;text-align:center;border:1px dashed var(--border);border-radius:12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-top:8px}
+.legend span{white-space:nowrap}
+.stale{color:var(--warn)}
+/* scheduler panel */
+.sched{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:6px}
+.sched-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.sched-top b{font-size:14px}
+.sched-policy{color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+.segbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--grid);margin:8px 0}
+.segbar>span{display:block;height:100%}
+.seg-done{background:var(--good)} .seg-run{background:var(--k1)} .seg-queue{background:var(--axis)} .seg-fail{background:var(--crit)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:11px;padding:2px 9px;border-radius:99px;border:1px solid var(--border);font-variant-numeric:tabular-nums}
+.chip.done{color:var(--good)} .chip.run{color:var(--k1);border-color:var(--k1)}
+.chip.queue{color:var(--ink2)} .chip.fail{color:var(--crit);border-color:var(--crit)}
+.chip .n{color:var(--muted);margin-left:5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>AGI kernel · training monitor</h1>
+  <span class="pill" id="p-updated">—</span>
+  <span class="pill" id="p-gpu">GPU —</span>
+  <span class="pill" id="p-active">—</span>
+  <span class="spacer"></span>
+  <span class="pill" id="p-run"></span>
+  <label class="refresh-ctl" title="自动刷新间隔">
+    <span id="refresh-count"></span>
+    <select id="refresh-sel">
+      <option value="0">⟳ 手动</option>
+      <option value="3">3s</option>
+      <option value="5">5s</option>
+      <option value="10">10s</option>
+      <option value="30">30s</option>
+      <option value="60">60s</option>
+    </select>
+  </label>
+  <button id="reload-now" title="立即刷新">⟳</button>
+  <button id="theme">◐ theme</button>
+</header>
+<main>
+  <div id="sched-section"></div>
+  <div id="live-section"></div>
+  <div id="results-section"></div>
+</main>
+
+<script>
+// The driver replaces this whole line with the collected JSON (inlined — no fetch, no CORS).
+var S = {"ts":"","gpu":null,"stage":[],"active":[],"configs":{},"run_dir":""}; //__STATE__
+
+// ---------- theme (persisted; defaults to OS) ----------
+(function(){
+  var saved = localStorage.getItem("aviz-theme");
+  if(saved) document.documentElement.setAttribute("data-theme", saved);
+  else if(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches)
+    document.documentElement.setAttribute("data-theme","dark");
+  document.getElementById("theme").onclick=function(){
+    var cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";
+    document.documentElement.setAttribute("data-theme",cur);
+    localStorage.setItem("aviz-theme",cur); render();  // re-render so canvas colors update
+  };
+})();
+
+// ---------- auto-refresh (persisted interval + live countdown) ----------
+// The driver rewrites dashboard.html on disk every few seconds; a full page reload picks up the
+// freshly-inlined data. We let the VIEWER choose how often the tab reloads (independent of the
+// driver's pull cadence). Interval persists across reloads via localStorage.
+(function(){
+  var sel = document.getElementById("refresh-sel");
+  var countEl = document.getElementById("refresh-count");
+  var saved = parseInt(localStorage.getItem("aviz-refresh") || "5", 10);   // default 5s
+  if(isNaN(saved)) saved = 5;
+  sel.value = String(saved);
+  var remaining = saved, timer = null;
+  function tick(){
+    if(remaining <= 0){ location.reload(); return; }   // reload = pick up driver's newest HTML
+    countEl.textContent = remaining + "s";
+    remaining -= 1;
+  }
+  function restart(){
+    if(timer){ clearInterval(timer); timer = null; }
+    var iv = parseInt(sel.value, 10);
+    if(!iv){ countEl.textContent = ""; return; }         // "手动" — no auto reload
+    remaining = iv; countEl.textContent = iv + "s";
+    timer = setInterval(tick, 1000);
+  }
+  sel.onchange = function(){ localStorage.setItem("aviz-refresh", sel.value); restart(); };
+  document.getElementById("reload-now").onclick = function(){ location.reload(); };
+  restart();
+})();
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function armColor(a){ return cssv(a==="K0"?"--k0":a==="K2"?"--k2":"--k1") || cssv("--k1"); }
+
+// ---------- header ----------
+function fillHeader(){
+  var stale = S.__stale;
+  document.getElementById("p-updated").innerHTML =
+    (stale?'<span class="stale">':'') + 'updated <b>'+(S.ts||"?")+'</b>'+(stale?' (stale)</span>':'');
+  var g=S.gpu;
+  document.getElementById("p-gpu").innerHTML = g
+    ? '<span class="dot" style="background:'+(g.util>10?cssv("--good"):cssv("--muted"))+'"></span>'
+      +'GPU <b>'+g.util+'%</b> · '+(g.mem_used/1024).toFixed(1)+'/'+(g.mem_total/1024).toFixed(0)+' GB'
+    : 'GPU —';
+  var n=(S.active||[]).length;
+  document.getElementById("p-active").innerHTML = 'training <b>'+n+'</b> config'+(n===1?"":"s");
+  document.getElementById("p-run").textContent = S.run_dir||"";
+}
+
+// ---------- scheduler panel (only shown if a scheduler_state.json was collected) ----------
+function schedulerSection(){
+  var host=document.getElementById("sched-section"); host.innerHTML="";
+  var sc=S.scheduler; if(!sc) return;   // no scheduler running -> panel simply absent
+  var c=sc.counts||{total:0,done:0,running:0,queued:0,failed:0};
+  var tot=c.total||1;
+  var pol=sc.policy||{};
+  var g=sc.gpu;
+  var el=document.createElement("div"); el.className="sched";
+  el.innerHTML=
+    '<div class="sched-top"><b>Scheduler</b>'+
+    '<span class="sched-policy">packing by free memory · max '+(pol.max_concurrent||"?")+
+      ' concurrent · '+ (pol.mem_safety_mb!=null?('safety '+(pol.mem_safety_mb/1000).toFixed(0)+'GB'):'')+
+      (sc.reserved_mb?(' · reserved '+(sc.reserved_mb/1000).toFixed(0)+'GB (warming up)'):'')+'</span>'+
+    (g?('<span class="sched-policy">· free '+(g.free/1000).toFixed(0)+'/'+(g.total/1000).toFixed(0)+
+      'GB · util '+g.util+'%</span>'):'')+
+    '</div>'+
+    '<div class="segbar">'+
+      seg("seg-done",c.done,tot)+seg("seg-run",c.running,tot)+
+      seg("seg-queue",c.queued,tot)+seg("seg-fail",c.failed,tot)+
+    '</div>'+
+    '<div class="chips">'+
+      chip("done","done",c.done)+chip("run","running",c.running)+
+      chip("queue","queued",c.queued)+(c.failed?chip("fail","failed",c.failed):'')+
+    '</div>'+
+    (sc.queued&&sc.queued.length?('<div class="sched-policy" style="margin-top:8px">next up: '+
+      sc.queued.slice(0,6).map(esc).join(", ")+(sc.queued.length>6?" …":"")+'</div>'):'')+
+    (sc.failed&&sc.failed.length?('<div class="sched-policy" style="margin-top:4px;color:var(--crit)">failed: '+
+      sc.failed.map(esc).join(", ")+'</div>'):'');
+  host.appendChild(el);
+}
+function seg(cls,n,tot){ var w=100*n/tot; return w>0?('<span class="'+cls+'" style="width:'+w+'%"></span>'):''; }
+function chip(cls,label,n){ return '<span class="chip '+cls+'">'+label+'<span class="n">'+n+'</span></span>'; }
+
+// ---------- live training cards ----------
+function liveSection(){
+  var host=document.getElementById("live-section"); host.innerHTML="";
+  var act=S.active||[];
+  var t=document.createElement("div"); t.className="section-title";
+  t.textContent="Live training"; host.appendChild(t);
+  if(!act.length){ var e=document.createElement("div"); e.className="empty";
+    e.textContent="No active training process — the run may be finished or between configs."; host.appendChild(e); return; }
+  var grid=document.createElement("div"); grid.className="grid"; host.appendChild(grid);
+  act.forEach(function(a,i){
+    var card=document.createElement("div"); card.className="card";
+    var pct=a.pct!=null?a.pct:0;
+    card.innerHTML='<h3>'+ (a.name||"config") +'</h3>'+
+      '<div class="sub">'+(a.arm?('arm '+a.arm+' · '):'')+
+        (a.step!=null?('step '+a.step+' / '+a.total+' ('+pct+'%)'):'starting…')+'</div>'+
+      '<div class="bar-out"><div class="bar-in" style="width:'+pct+'%"></div></div>'+
+      '<div class="canvas-wrap" style="height:180px"><canvas id="live'+i+'"></canvas></div>'+
+      '<div class="log">'+(a.latest? esc(a.latest) : "waiting for step logs…")+'</div>';
+    grid.appendChild(card);
+    drawLive("live"+i, a);
+  });
+}
+
+function drawLive(id, a){
+  var prog=a.progress||[]; if(!prog.length) return;
+  // split into segments where step number drops (multi-seed restarts), so seeds aren't a sawtooth
+  var segs=[],cur=[],prev=-1;
+  prog.forEach(function(p){ if(p[0]<prev){ if(cur.length)segs.push(cur); cur=[]; } cur.push(p); prev=p[0]; });
+  if(cur.length)segs.push(cur);
+  var multi=segs.length>1;
+  var xs=[]; segs.forEach(function(s){s.forEach(function(p){ if(xs.indexOf(p[0])<0)xs.push(p[0]); });});
+  xs.sort(function(x,y){return x-y;});
+  var pal=[cssv("--k1"),cssv("--k2"),cssv("--good"),cssv("--s3")];
+  var ds=segs.map(function(s,i){ var m={}; s.forEach(function(p){m[p[0]]=p[1];});
+    return {label:multi?("seed "+i):"train acc (EMA)",
+      data:xs.map(function(x){return m[x]!=null?m[x]:null;}),
+      borderColor:pal[i%pal.length],backgroundColor:pal[i%pal.length],
+      tension:0.25,pointRadius:0,borderWidth:2,spanGaps:true};});
+  mkChart(id,{type:"line",data:{labels:xs,datasets:ds},options:baseOpts({
+    x:"training step", y:"training accuracy (EMA)", y01:true, legend:multi})});
+}
+
+// ---------- results: render each config by the SHAPE its dashboard.metric declares ----------
+function resultsSection(){
+  var host=document.getElementById("results-section"); host.innerHTML="";
+  var names=Object.keys(S.configs||{});
+  var t=document.createElement("div"); t.className="section-title";
+  t.textContent="Results"; host.appendChild(t);
+  if(!names.length){ var e=document.createElement("div"); e.className="empty";
+    e.textContent="No finished configs yet — a config's metrics.json is written when all its arms complete."; host.appendChild(e); return; }
+  var grid=document.createElement("div"); grid.className="grid"; host.appendChild(grid);
+  names.sort();
+  names.forEach(function(name,i){
+    var m=S.configs[name]; var dash=m.dashboard||synthDash(m,name);
+    var metric=dash.metric || guessMetric(m);
+    var card=document.createElement("div"); card.className="card";
+    card.innerHTML='<h3>'+esc(dash.title||name)+'</h3>'+
+      '<div class="sub">'+esc(dash.subtitle||"")+'</div>'+
+      '<div class="kernel">'+esc(dash.kernel||"")+'</div>'+
+      '<div class="canvas-wrap"><canvas id="res'+i+'"></canvas></div>'+
+      '<div class="legend" id="leg'+i+'"></div>';
+    grid.appendChild(card);
+    if(metric==="ref_lit") drawSessionArms("res"+i,"leg"+i,m);
+    else if(metric==="timescales") drawTimescales("res"+i,"leg"+i,m);
+    else drawHops("res"+i,"leg"+i,m);
+    // if this config ALSO has a timescale probe, add a second card for it (data-driven, auto-appears)
+    var anyTs=Object.keys(m.arms||{}).some(function(a){return m.arms[a].timescales;});
+    if(metric==="ref_lit" && anyTs){
+      var c2=document.createElement("div"); c2.className="card";
+      c2.innerHTML='<h3>'+esc((dash.title||name)+" · memory timescales")+'</h3>'+
+        '<div class="sub">can a linear probe recover the stored value from each layer, as recall delay grows?</div>'+
+        '<div class="kernel">slow layers (high γ) should hold; fast layers should forget</div>'+
+        '<div class="canvas-wrap"><canvas id="ts'+i+'"></canvas></div>'+
+        '<div class="legend" id="tsleg'+i+'"></div>';
+      grid.appendChild(c2);
+      drawTimescales("ts"+i,"tsleg"+i,m);
+    }
+  });
+}
+
+function guessMetric(m){
+  var arms=m.arms||{}; var k=Object.keys(arms)[0];
+  if(!k) return "acc_by_hops";
+  if(arms[k].ref_acc!=null) return "ref_lit";
+  return "acc_by_hops";
+}
+
+// Fallback title/subtitle synthesized from config alone — so a metrics.json written BEFORE the
+// run.py dashboard block existed (or any future run) still renders with a self-describing title.
+// This is what makes the dashboard robust to "changed params / older runs": no hand-editing needed.
+function synthDash(m,name){
+  var c=m.config||{}; var metric=guessMetric(m);
+  var kernel = (c.d_model!=null)
+    ? ("d_model="+c.d_model+", d_state="+c.d_state+", "+c.n_layers+" layers (γ="+JSON.stringify(c.decays)+")")
+    : "";
+  if(metric==="ref_lit"){
+    var kind = (c.session_hops===0) ? "pure recall (no arithmetic)"
+             : ("recall + "+c.session_hops+"-hop chain");
+    return {title:"Session memory · "+kind, metric:metric, kernel:kernel,
+      subtitle:"session_len="+c.session_len+", n_slots="+c.n_slots
+        +(c.delta_rule===false?", Hebbian write":", delta-rule write")};
+  }
+  return {title:"Arithmetic · mod-"+(c.modulus||10)+" chain", metric:metric, kernel:kernel,
+    subtitle:(c.train_hops?("train hops "+Math.min.apply(null,c.train_hops)+"–"+Math.max.apply(null,c.train_hops)):"")
+      +(c.curriculum?" · curriculum":" · uniform")};
+}
+
+// ---- session arms: grouped bars (ref_acc = memory USE, lit_acc = no-memory) + reference lines ----
+function drawSessionArms(cid,legId,m){
+  var arms=m.arms||{}; var order=["K0","K1","K2"].filter(function(a){return arms[a];})
+    .concat(Object.keys(arms).filter(function(a){return ["K0","K1","K2"].indexOf(a)<0;}));
+  var chance=(arms[order[0]]&&arms[order[0]].chance)|| (1/((m.config&&m.config.modulus)||10));
+  var refData=order.map(function(a){return arms[a].ref_acc;});
+  var litData=order.map(function(a){return arms[a].lit_acc;});
+  var refErr=order.map(function(a){return arms[a].ref_acc_std||0;});
+  var cols=order.map(armColor);
+  mkChart(cid,{type:"bar",
+    data:{labels:order.map(function(a){return armLabel(m,a);}),
+      datasets:[
+        {label:"ref_acc · memory USE",data:refData,backgroundColor:cols,
+          borderRadius:4,categoryPercentage:0.7,barPercentage:0.8},
+        {label:"lit_acc · no memory needed",data:litData,
+          backgroundColor:cols.map(function(c){return hexA(c,0.35);}),
+          borderRadius:4,categoryPercentage:0.7,barPercentage:0.8}
+      ]},
+    options:baseOpts({x:"",y:"accuracy",y01:true,legend:true,
+      refLines:[{y:chance,label:"chance",color:cssv("--chance"),align:"right"},
+                {y:0.10,label:"Proj-3 frozen Transformer (0.10)",color:cssv("--warn"),dash:[3,3],align:"left",dy:-5}]})});
+  legendHTML(legId,[
+    {c:cssv("--k1"),t:"solid = ref_acc (requires using stored memory)"},
+    {c:hexA(cssv("--k1"),0.35),t:"faded = lit_acc (answerable without memory)"},
+    {c:cssv("--chance"),t:"chance line"},{c:cssv("--warn"),t:"Project-3 wall (0.10)"}]);
+}
+
+// ---- accuracy vs hop depth: one line per arm + chance + OOD divider ----
+function drawHops(cid,legId,m){
+  var arms=m.arms||{};
+  var labelSet={}; Object.keys(arms).forEach(function(a){
+    Object.keys(arms[a].acc_by_hops||{}).forEach(function(h){labelSet[+h]=1;});});
+  var xs=Object.keys(labelSet).map(Number).sort(function(a,b){return a-b;});
+  var mod=(m.config&&m.config.modulus)||10;
+  var tmax=(m.config&&m.config.train_hops)?Math.max.apply(null,m.config.train_hops):null;
+  var ds=Object.keys(arms).map(function(a){var v=arms[a];
+    return {label:armLabel(m,a),borderColor:armColor(a),backgroundColor:armColor(a),
+      data:xs.map(function(h){var o=v.acc_by_hops||{};return o[h]!=null?o[h]:null;}),
+      tension:0.25,borderWidth:2,pointRadius:3,spanGaps:true};});
+  mkChart(cid,{type:"line",data:{labels:xs,datasets:ds},
+    options:baseOpts({x:"hop count (reasoning depth)",y:"answer accuracy",y01:true,legend:true,
+      refLines:[{y:1/mod,label:"chance",color:cssv("--chance")}],
+      vLine: tmax!=null?{x:tmax,label:"train | OOD →"}:null})});
+  legendHTML(legId,[{c:cssv("--chance"),t:"chance = 1/"+mod},{c:cssv("--muted"),t:"dashed vertical = beyond trained depth (OOD)"}]);
+}
+
+// ---- timescale fan: probe acc vs recall delay, one line per layer, blue ramp by γ ----
+function drawTimescales(cid,legId,m){
+  var arms=m.arms||{};
+  // prefer K2's probe (grounded), else any arm that has one
+  var arm=["K2","K1"].find(function(a){return arms[a]&&arms[a].timescales;})
+    || Object.keys(arms).find(function(a){return arms[a].timescales;});
+  if(!arm){ document.getElementById(cid).parentNode.innerHTML='<div class="empty">no timescale probe</div>'; return; }
+  var ts=arms[arm].timescales; var layers=ts.layers||[];
+  var xset={}; layers.forEach(function(L){Object.keys(L.acc_by_delay||{}).forEach(function(d){xset[+d]=1;});});
+  var xs=Object.keys(xset).map(Number).sort(function(a,b){return a-b;});
+  var ramp=["--s1","--s2","--s3","--s4","--s5"];
+  var ds=layers.map(function(L,i){
+    var col=cssv(ramp[Math.round(i*(ramp.length-1)/Math.max(1,layers.length-1))]);
+    return {label:"γ="+L.gamma,borderColor:col,backgroundColor:col,
+      data:xs.map(function(d){var o=L.acc_by_delay||{};return o[d]!=null?o[d]:null;}),
+      tension:0.25,borderWidth:2,pointRadius:3,spanGaps:true};});
+  mkChart(cid,{type:"line",data:{labels:xs,datasets:ds},
+    options:baseOpts({x:"recall delay Δ (problems since stored)",y:"probe accuracy for stored value",
+      y01:true,legend:true,refLines:[{y:ts.chance||0.1,label:"chance",color:cssv("--chance")}]})});
+  legendHTML(legId,[{c:cssv("--s2"),t:"light = fast layer (forgets)"},{c:cssv("--s5"),t:"dark = slow layer (holds)"},
+    {c:cssv("--chance"),t:"chance"}]);
+}
+
+function armLabel(m,a){
+  var info=(m.dashboard&&m.dashboard.arm_info&&m.dashboard.arm_info[a]);
+  return info?info[0]:a;
+}
+
+// ---------- chart helpers ----------
+var CHARTS={};
+function mkChart(id,cfg){
+  var el=document.getElementById(id); if(!el) return;
+  if(CHARTS[id]){ CHARTS[id].destroy(); }
+  CHARTS[id]=new Chart(el,cfg);
+}
+function baseOpts(o){
+  var grid=cssv("--grid"), axis=cssv("--muted"), ink=cssv("--ink2");
+  return {
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{
+      legend:{display:!!o.legend,labels:{boxWidth:12,boxHeight:12,color:ink,font:{size:11},usePointStyle:true}},
+      tooltip:{enabled:true,mode:"index",intersect:false,
+        backgroundColor:cssv("--surface"),titleColor:cssv("--ink"),bodyColor:ink,borderColor:cssv("--border"),borderWidth:1,
+        callbacks:{label:function(c){return c.dataset.label+": "+(c.parsed.y!=null?c.parsed.y.toFixed(3):"—");}}}
+    },
+    scales:{
+      x:{title:{display:!!o.x,text:o.x,color:axis,font:{size:11}},grid:{color:grid},
+        ticks:{color:axis,font:{size:11}}},
+      y:o.y01?{min:0,max:1,title:{display:true,text:o.y,color:axis,font:{size:11}},
+        grid:{color:grid},ticks:{color:axis,font:{size:11},stepSize:0.2}}
+        :{title:{display:true,text:o.y,color:axis},grid:{color:grid},ticks:{color:axis}}
+    },
+    // custom ref/vertical lines drawn via a tiny inline plugin set
+    __ref:o.refLines||[], __vline:o.vLine||null
+  };
+}
+// draw reference horizontal lines + OOD vertical line after datasets
+function registerRefLines(){
+Chart.register({id:"reflines",afterDraw:function(chart){
+  var o=chart.options; if(!o.__ref&&!o.__vline) return;
+  var a=chart.chartArea, sy=chart.scales.y, sx=chart.scales.x, ctx=chart.ctx;
+  (o.__ref||[]).forEach(function(r){
+    var y=sy.getPixelForValue(r.y); ctx.save();
+    ctx.strokeStyle=r.color||"#d03b3b"; ctx.lineWidth=1; ctx.setLineDash(r.dash||[5,4]);
+    ctx.beginPath(); ctx.moveTo(a.left,y); ctx.lineTo(a.right,y); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=r.color||"#d03b3b"; ctx.font="10px system-ui";
+    var dy=(r.dy||0);
+    if(r.align==="left"){ ctx.textAlign="left"; ctx.fillText(r.label,a.left+4,y-3+dy); }
+    else { ctx.textAlign="right"; ctx.fillText(r.label,a.right-4,y-3+dy); }
+    ctx.restore();
+  });
+  if(o.__vline){ var vx=sx.getPixelForValue(o.__vline.x)+ (sx.getPixelForValue(1)-sx.getPixelForValue(0))/2;
+    ctx.save(); ctx.strokeStyle=cssv("--muted"); ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(vx,a.top); ctx.lineTo(vx,a.bottom); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=cssv("--muted"); ctx.font="10px system-ui"; ctx.textAlign="left";
+    ctx.fillText(o.__vline.label,vx+4,a.top+12); ctx.restore(); }
+}});
+}
+
+function legendHTML(id,items){
+  var el=document.getElementById(id); if(!el) return;
+  el.innerHTML=items.map(function(it){
+    return '<span><span class="dot" style="background:'+it.c+'"></span>'+esc(it.t)+'</span>';}).join("");
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function hexA(hex,a){ // hex -> rgba (handles #rgb/#rrggbb)
+  hex=hex.replace("#",""); if(hex.length===3)hex=hex.split("").map(function(c){return c+c;}).join("");
+  var n=parseInt(hex,16); return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")"; }
+
+function render(){ fillHeader(); schedulerSection(); liveSection(); resultsSection(); }
+
+// Guard: Chart.js is vendored locally (chart.umd.min.js) so there is no network dependency.
+// If it still failed to load, show a visible banner instead of a silently-blank page.
+if (typeof Chart === "undefined") {
+  document.getElementById("results-section").innerHTML =
+    '<div class="empty" style="color:var(--crit)">Chart.js failed to load — is chart.umd.min.js next to dashboard.html?</div>';
+  fillHeader();
+} else {
+  registerRefLines();
+  render();
+}
+</script>
+</body>
+</html>

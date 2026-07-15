@@ -1,0 +1,90 @@
+{
+  "config": {
+    "d_model": 128,
+    "d_state": 64,
+    "n_layers": 4,
+    "decays": [
+      0.0,
+      0.7,
+      0.95,
+      0.99
+    ],
+    "delta_rule": true,
+    "modulus": 10,
+    "task": "session",
+    "train_hops": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "eval_hops": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "session_len": 6,
+    "n_slots": 6,
+    "ref_prob": 0.5,
+    "session_hops": 2,
+    "train_steps": 8000,
+    "batch_size": 128,
+    "lr": 0.002,
+    "device": "cuda"
+  },
+  "mode": "arith",
+  "seeds": [
+    0
+  ],
+  "dashboard": {
+    "title": "Arithmetic \u00b7 mod-10 chain",
+    "subtitle": "train hops 1\u20134, uniform \u00b7 1 seed",
+    "metric": "acc_by_hops",
+    "kernel": "d_model=128, d_state=64, 4 layers (\u03b3=[0.0, 0.7, 0.95, 0.99])",
+    "arm_info": {
+      "K0": [
+        "K0 \u00b7 read severed",
+        "causal control \u2014 fast weights write but the read never feeds compute"
+      ],
+      "K1": [
+        "K1 \u00b7 fast-weight memory",
+        "answer supervision only \u2014 does USE emerge on its own?"
+      ],
+      "K2": [
+        "K2 \u00b7 + grounded read",
+        "adds read supervision (referenced read must decode the stored value)"
+      ]
+    }
+  },
+  "arms": {
+    "K1": {
+      "trainable_params": 401304,
+      "acc_by_hops": {
+        "1": 0.3515625,
+        "2": 0.177734375,
+        "3": 0.2109375,
+        "4": 0.1796875,
+        "5": 0.111328125,
+        "6": 0.126953125,
+        "7": 0.119140625,
+        "8": 0.087890625
+      },
+      "probe": {
+        "hops": 4,
+        "per_step_acc": [
+          0.39125,
+          0.24125,
+          0.21,
+          0.1925
+        ],
+        "chance": 0.1
+      },
+      "probe_hop": 4
+    }
+  }
+}

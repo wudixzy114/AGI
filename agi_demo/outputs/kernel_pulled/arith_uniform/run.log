@@ -1,0 +1,196 @@
+
+============================================================
+ARM K1
+============================================================
+[arm K1] trainable=401,304 device=cuda decays=[0.0, 0.7, 0.95, 0.99] | arith uniform
+  step   50/8000 hops=3 loss=2.379 proc=2.310 | ema_acc=0.061
+  step  100/8000 hops=3 loss=2.449 proc=2.313 | ema_acc=0.086
+  step  150/8000 hops=3 loss=2.484 proc=2.309 | ema_acc=0.096
+  step  200/8000 hops=1 loss=2.535 proc=2.302 | ema_acc=0.098
+  step  250/8000 hops=4 loss=2.568 proc=2.293 | ema_acc=0.101
+  step  300/8000 hops=1 loss=2.547 proc=2.227 | ema_acc=0.096
+  step  350/8000 hops=4 loss=2.557 proc=2.260 | ema_acc=0.101
+  step  400/8000 hops=4 loss=2.585 proc=2.285 | ema_acc=0.112
+  step  450/8000 hops=2 loss=2.671 proc=2.184 | ema_acc=0.113
+  step  500/8000 hops=1 loss=1.994 proc=1.650 | ema_acc=0.127
+  step  550/8000 hops=1 loss=2.279 proc=1.999 | ema_acc=0.128
+  step  600/8000 hops=3 loss=2.507 proc=2.237 | ema_acc=0.118
+  step  650/8000 hops=4 loss=2.621 proc=2.232 | ema_acc=0.142
+  step  700/8000 hops=2 loss=2.648 proc=2.058 | ema_acc=0.130
+  step  750/8000 hops=3 loss=2.518 proc=2.169 | ema_acc=0.118
+  step  800/8000 hops=2 loss=2.522 proc=1.936 | ema_acc=0.117
+  step  850/8000 hops=2 loss=2.492 proc=1.942 | ema_acc=0.139
+  step  900/8000 hops=3 loss=2.506 proc=2.071 | ema_acc=0.162
+  step  950/8000 hops=1 loss=1.650 proc=1.455 | ema_acc=0.146
+  step 1000/8000 hops=3 loss=2.519 proc=1.969 | ema_acc=0.141
+  step 1050/8000 hops=2 loss=2.065 proc=1.638 | ema_acc=0.167
+  step 1100/8000 hops=2 loss=1.969 proc=1.737 | ema_acc=0.161
+  step 1150/8000 hops=2 loss=2.046 proc=1.707 | ema_acc=0.172
+  step 1200/8000 hops=4 loss=2.420 proc=1.923 | ema_acc=0.180
+  step 1250/8000 hops=4 loss=2.393 proc=1.935 | ema_acc=0.191
+  step 1300/8000 hops=3 loss=2.223 proc=1.763 | ema_acc=0.186
+  step 1350/8000 hops=3 loss=2.038 proc=1.674 | ema_acc=0.200
+  step 1400/8000 hops=3 loss=1.998 proc=1.688 | ema_acc=0.198
+  step 1450/8000 hops=2 loss=2.285 proc=1.700 | ema_acc=0.207
+  step 1500/8000 hops=1 loss=1.429 proc=1.356 | ema_acc=0.213
+  step 1550/8000 hops=2 loss=1.761 proc=1.504 | ema_acc=0.216
+  step 1600/8000 hops=4 loss=2.214 proc=1.660 | ema_acc=0.223
+  step 1650/8000 hops=3 loss=1.902 proc=1.553 | ema_acc=0.221
+  step 1700/8000 hops=1 loss=1.431 proc=1.315 | ema_acc=0.221
+  step 1750/8000 hops=1 loss=1.487 proc=1.320 | ema_acc=0.214
+  step 1800/8000 hops=2 loss=1.781 proc=1.493 | ema_acc=0.223
+  step 1850/8000 hops=1 loss=1.439 proc=1.323 | ema_acc=0.230
+  step 1900/8000 hops=1 loss=1.381 proc=1.259 | ema_acc=0.229
+  step 1950/8000 hops=4 loss=1.784 proc=1.536 | ema_acc=0.239
+  step 2000/8000 hops=2 loss=1.746 proc=1.445 | ema_acc=0.242
+  step 2050/8000 hops=4 loss=1.826 proc=1.583 | ema_acc=0.235
+  step 2100/8000 hops=3 loss=1.813 proc=1.510 | ema_acc=0.261
+  step 2150/8000 hops=1 loss=1.365 proc=1.251 | ema_acc=0.257
+  step 2200/8000 hops=3 loss=1.775 proc=1.483 | ema_acc=0.251
+  step 2250/8000 hops=2 loss=1.752 proc=1.463 | ema_acc=0.237
+  step 2300/8000 hops=2 loss=1.714 proc=1.394 | ema_acc=0.229
+  step 2350/8000 hops=4 loss=1.774 proc=1.511 | ema_acc=0.243
+  step 2400/8000 hops=4 loss=1.772 proc=1.545 | ema_acc=0.233
+  step 2450/8000 hops=4 loss=1.772 proc=1.560 | ema_acc=0.245
+  step 2500/8000 hops=1 loss=1.318 proc=1.202 | ema_acc=0.267
+  step 2550/8000 hops=1 loss=1.323 proc=1.223 | ema_acc=0.255
+  step 2600/8000 hops=3 loss=1.777 proc=1.456 | ema_acc=0.245
+  step 2650/8000 hops=4 loss=1.790 proc=1.527 | ema_acc=0.237
+  step 2700/8000 hops=3 loss=1.787 proc=1.468 | ema_acc=0.250
+  step 2750/8000 hops=2 loss=1.716 proc=1.408 | ema_acc=0.240
+  step 2800/8000 hops=4 loss=1.769 proc=1.502 | ema_acc=0.234
+  step 2850/8000 hops=4 loss=1.785 proc=1.515 | ema_acc=0.238
+  step 2900/8000 hops=2 loss=1.708 proc=1.369 | ema_acc=0.249
+  step 2950/8000 hops=1 loss=1.261 proc=1.189 | ema_acc=0.247
+  step 3000/8000 hops=2 loss=1.716 proc=1.380 | ema_acc=0.256
+  step 3050/8000 hops=2 loss=1.780 proc=1.416 | ema_acc=0.244
+  step 3100/8000 hops=3 loss=1.787 proc=1.478 | ema_acc=0.252
+  step 3150/8000 hops=4 loss=1.757 proc=1.523 | ema_acc=0.251
+  step 3200/8000 hops=3 loss=1.787 proc=1.490 | ema_acc=0.250
+  step 3250/8000 hops=1 loss=1.314 proc=1.173 | ema_acc=0.269
+  step 3300/8000 hops=3 loss=1.771 proc=1.460 | ema_acc=0.251
+  step 3350/8000 hops=3 loss=1.774 proc=1.468 | ema_acc=0.250
+  step 3400/8000 hops=4 loss=1.766 proc=1.500 | ema_acc=0.228
+  step 3450/8000 hops=3 loss=1.761 proc=1.465 | ema_acc=0.244
+  step 3500/8000 hops=4 loss=1.781 proc=1.542 | ema_acc=0.258
+  step 3550/8000 hops=2 loss=1.706 proc=1.401 | ema_acc=0.250
+  step 3600/8000 hops=3 loss=1.752 proc=1.427 | ema_acc=0.244
+  step 3650/8000 hops=2 loss=1.716 proc=1.342 | ema_acc=0.230
+  step 3700/8000 hops=1 loss=1.295 proc=1.181 | ema_acc=0.241
+  step 3750/8000 hops=4 loss=1.765 proc=1.518 | ema_acc=0.259
+  step 3800/8000 hops=3 loss=1.746 proc=1.435 | ema_acc=0.253
+  step 3850/8000 hops=2 loss=1.677 proc=1.362 | ema_acc=0.248
+  step 3900/8000 hops=2 loss=1.658 proc=1.306 | ema_acc=0.254
+  step 3950/8000 hops=4 loss=1.755 proc=1.497 | ema_acc=0.250
+  step 4000/8000 hops=1 loss=1.215 proc=1.135 | ema_acc=0.266
+  step 4050/8000 hops=2 loss=1.761 proc=1.418 | ema_acc=0.247
+  step 4100/8000 hops=2 loss=1.741 proc=1.400 | ema_acc=0.251
+  step 4150/8000 hops=1 loss=1.282 proc=1.225 | ema_acc=0.249
+  step 4200/8000 hops=3 loss=1.767 proc=1.487 | ema_acc=0.252
+  step 4250/8000 hops=4 loss=1.779 proc=1.522 | ema_acc=0.250
+  step 4300/8000 hops=2 loss=1.718 proc=1.400 | ema_acc=0.258
+  step 4350/8000 hops=4 loss=1.776 proc=1.531 | ema_acc=0.255
+  step 4400/8000 hops=2 loss=1.702 proc=1.388 | ema_acc=0.248
+  step 4450/8000 hops=4 loss=1.776 proc=1.475 | ema_acc=0.242
+  step 4500/8000 hops=4 loss=1.806 proc=1.501 | ema_acc=0.253
+  step 4550/8000 hops=1 loss=1.264 proc=1.160 | ema_acc=0.250
+  step 4600/8000 hops=1 loss=1.252 proc=1.147 | ema_acc=0.268
+  step 4650/8000 hops=4 loss=1.770 proc=1.499 | ema_acc=0.256
+  step 4700/8000 hops=3 loss=1.758 proc=1.443 | ema_acc=0.236
+  step 4750/8000 hops=2 loss=1.759 proc=1.423 | ema_acc=0.260
+  step 4800/8000 hops=4 loss=1.769 proc=1.482 | ema_acc=0.256
+  step 4850/8000 hops=2 loss=1.729 proc=1.409 | ema_acc=0.246
+  step 4900/8000 hops=4 loss=1.761 proc=1.450 | ema_acc=0.240
+  step 4950/8000 hops=4 loss=2.075 proc=1.573 | ema_acc=0.251
+  step 5000/8000 hops=4 loss=1.822 proc=1.551 | ema_acc=0.253
+  step 5050/8000 hops=1 loss=1.253 proc=1.158 | ema_acc=0.258
+  step 5100/8000 hops=3 loss=1.758 proc=1.475 | ema_acc=0.247
+  step 5150/8000 hops=3 loss=1.787 proc=1.465 | ema_acc=0.248
+  step 5200/8000 hops=2 loss=1.653 proc=1.337 | ema_acc=0.257
+  step 5250/8000 hops=2 loss=1.610 proc=1.288 | ema_acc=0.260
+  step 5300/8000 hops=1 loss=1.249 proc=1.136 | ema_acc=0.266
+  step 5350/8000 hops=4 loss=1.772 proc=1.476 | ema_acc=0.260
+  step 5400/8000 hops=1 loss=1.188 proc=1.080 | ema_acc=0.254
+  step 5450/8000 hops=1 loss=1.286 proc=1.168 | ema_acc=0.245
+  step 5500/8000 hops=2 loss=1.650 proc=1.320 | ema_acc=0.240
+  step 5550/8000 hops=4 loss=1.786 proc=1.508 | ema_acc=0.243
+  step 5600/8000 hops=2 loss=1.674 proc=1.348 | ema_acc=0.246
+  step 5650/8000 hops=4 loss=1.750 proc=1.461 | ema_acc=0.244
+  step 5700/8000 hops=3 loss=1.762 proc=1.466 | ema_acc=0.245
+  step 5750/8000 hops=1 loss=1.251 proc=1.131 | ema_acc=0.263
+  step 5800/8000 hops=1 loss=1.255 proc=1.147 | ema_acc=0.251
+  step 5850/8000 hops=1 loss=1.290 proc=1.173 | ema_acc=0.267
+  step 5900/8000 hops=3 loss=1.761 proc=1.461 | ema_acc=0.260
+  step 5950/8000 hops=4 loss=2.047 proc=1.553 | ema_acc=0.253
+  step 6000/8000 hops=4 loss=1.805 proc=1.519 | ema_acc=0.250
+  step 6050/8000 hops=1 loss=1.202 proc=1.085 | ema_acc=0.256
+  step 6100/8000 hops=2 loss=1.681 proc=1.338 | ema_acc=0.249
+  step 6150/8000 hops=4 loss=1.756 proc=1.481 | ema_acc=0.247
+  step 6200/8000 hops=4 loss=1.767 proc=1.459 | ema_acc=0.238
+  step 6250/8000 hops=2 loss=1.675 proc=1.349 | ema_acc=0.260
+  step 6300/8000 hops=1 loss=1.241 proc=1.137 | ema_acc=0.263
+  step 6350/8000 hops=3 loss=1.745 proc=1.413 | ema_acc=0.254
+  step 6400/8000 hops=1 loss=1.230 proc=1.117 | ema_acc=0.245
+  step 6450/8000 hops=4 loss=1.791 proc=1.473 | ema_acc=0.245
+  step 6500/8000 hops=4 loss=1.920 proc=1.602 | ema_acc=0.254
+  step 6550/8000 hops=4 loss=1.792 proc=1.506 | ema_acc=0.251
+  step 6600/8000 hops=3 loss=1.770 proc=1.458 | ema_acc=0.251
+  step 6650/8000 hops=2 loss=1.653 proc=1.320 | ema_acc=0.253
+  step 6700/8000 hops=3 loss=1.754 proc=1.433 | ema_acc=0.257
+  step 6750/8000 hops=2 loss=1.657 proc=1.301 | ema_acc=0.259
+  step 6800/8000 hops=3 loss=1.752 proc=1.441 | ema_acc=0.275
+  step 6850/8000 hops=2 loss=1.631 proc=1.264 | ema_acc=0.252
+  step 6900/8000 hops=4 loss=1.745 proc=1.465 | ema_acc=0.253
+  step 6950/8000 hops=1 loss=1.229 proc=1.125 | ema_acc=0.261
+  step 7000/8000 hops=4 loss=1.771 proc=1.487 | ema_acc=0.245
+  step 7050/8000 hops=1 loss=1.259 proc=1.149 | ema_acc=0.258
+  step 7100/8000 hops=2 loss=1.735 proc=1.394 | ema_acc=0.272
+  step 7150/8000 hops=1 loss=1.228 proc=1.136 | ema_acc=0.270
+  step 7200/8000 hops=3 loss=1.750 proc=1.438 | ema_acc=0.250
+  step 7250/8000 hops=4 loss=1.792 proc=1.496 | ema_acc=0.244
+  step 7300/8000 hops=4 loss=1.760 proc=1.481 | ema_acc=0.243
+  step 7350/8000 hops=3 loss=1.760 proc=1.423 | ema_acc=0.241
+  step 7400/8000 hops=2 loss=1.654 proc=1.320 | ema_acc=0.258
+  step 7450/8000 hops=2 loss=1.642 proc=1.348 | ema_acc=0.261
+  step 7500/8000 hops=3 loss=1.753 proc=1.443 | ema_acc=0.259
+  step 7550/8000 hops=3 loss=1.747 proc=1.379 | ema_acc=0.248
+  step 7600/8000 hops=2 loss=1.662 proc=1.322 | ema_acc=0.260
+  step 7650/8000 hops=1 loss=1.287 proc=1.170 | ema_acc=0.271
+  step 7700/8000 hops=4 loss=1.789 proc=1.482 | ema_acc=0.265
+  step 7750/8000 hops=4 loss=1.808 proc=1.498 | ema_acc=0.241
+  step 7800/8000 hops=2 loss=1.710 proc=1.417 | ema_acc=0.259
+  step 7850/8000 hops=3 loss=1.748 proc=1.435 | ema_acc=0.250
+  step 7900/8000 hops=4 loss=1.767 proc=1.497 | ema_acc=0.241
+  step 7950/8000 hops=1 loss=1.202 proc=1.124 | ema_acc=0.251
+  step 8000/8000 hops=4 loss=1.874 proc=1.556 | ema_acc=0.246
+[arm K1] acc_by_hops: 1:0.35, 2:0.18, 3:0.21, 4:0.18, 5:0.11, 6:0.13, 7:0.12, 8:0.09
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=200).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=200).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=200).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+[arm K1] probe(hops=4) per-step: x1:0.39, x2:0.24, x3:0.21, x4:0.19  (chance 0.10)
+
+wrote agi_demo/outputs/kernel/arith_uniform/metrics.json
+wrote figures to agi_demo/outputs/kernel/arith_uniform/
+
+============================================================
+SUMMARY (arith)
+============================================================
+arm K1: params=401,304 OOD(hops [5, 6, 7, 8])=[0.11, 0.13, 0.12, 0.09] | probe last-step=0.19

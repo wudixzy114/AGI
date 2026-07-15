@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 4 · 非 Transformer 快权重内核 · 架构全景</title>
+<style>
+  :root{
+    --bg:#0a0e17; --bg-2:#0c111d;
+    --panel:#111a2b; --panel-2:#0e1626; --panel-3:#0b1220;
+    --border:rgba(148,163,184,.14); --border-2:rgba(148,163,184,.26);
+    --text:#e7eef8; --muted:#93a3ba; --faint:#5d6f88;
+    --ice:#38bdf8;  --ice-2:#0ea5e9;  --ice-bg:rgba(56,189,248,.10); --ice-bd:rgba(56,189,248,.38);
+    --ember:#fb923c;--ember-2:#f59e0b;--ember-bg:rgba(251,146,60,.10);--ember-bd:rgba(251,146,60,.40);
+    --violet:#c084fc;--violet-2:#a855f7;--violet-bg:rgba(192,132,252,.10);--violet-bd:rgba(192,132,252,.40);
+    --green:#34d399;--green-bg:rgba(52,211,153,.10);--green-bd:rgba(52,211,153,.40);
+    --red:#fb7185;  --red-bg:rgba(251,113,133,.10); --red-bd:rgba(251,113,133,.40);
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 15% -5%, rgba(56,189,248,.08), transparent 42%),
+      radial-gradient(circle at 85% 8%, rgba(192,132,252,.07), transparent 45%),
+      radial-gradient(var(--bg-grid,rgba(148,163,184,.035)) 1px, transparent 1px);
+    background-size:auto,auto,26px 26px;background-attachment:fixed;}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(10,14,23,.72);border-bottom:1px solid var(--border)}
+  nav .wrap{display:flex;align-items:center;gap:8px;height:56px;flex-wrap:wrap}
+  nav .brand{font-weight:700;font-size:14px;letter-spacing:.5px;margin-right:auto;display:flex;align-items:center;gap:9px}
+  nav .brand .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--ice),var(--violet));box-shadow:0 0 12px var(--ice)}
+  nav a.link{font-size:12.5px;color:var(--muted);padding:6px 11px;border-radius:8px;transition:.18s;white-space:nowrap}
+  nav a.link:hover{color:var(--text);background:rgba(148,163,184,.08)}
+  header{padding:72px 0 44px;text-align:center}
+  header .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:2.5px;color:var(--ice);text-transform:uppercase;margin-bottom:18px}
+  header h1{font-size:clamp(28px,5vw,46px);line-height:1.14;margin:0 0 18px;font-weight:800;letter-spacing:-.5px}
+  header h1 .g{background:linear-gradient(120deg,var(--ice),var(--violet) 60%,var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header .thesis{max-width:720px;margin:0 auto;color:var(--muted);font-size:16.5px}
+  header .thesis b{color:var(--text);font-weight:600}
+  section{padding:46px 0;border-top:1px solid var(--border)}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  .sec-head .idx{font-family:var(--mono);font-size:13px;color:var(--faint)}
+  .sec-head h2{font-size:25px;margin:0;font-weight:750;letter-spacing:-.3px}
+  .sec-sub{color:var(--muted);font-size:15px;margin:0 0 28px;max-width:800px}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:30px}
+  .legend .item{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:7px 14px}
+  .legend .sw{width:12px;height:12px;border-radius:4px}
+  .sw.mem{background:var(--violet);box-shadow:0 0 10px var(--violet-bd)}
+  .sw.plastic{background:var(--ember);box-shadow:0 0 10px var(--ember-bd)}
+  .sw.proc{background:var(--green);box-shadow:0 0 10px var(--green-bd)}
+  .sw.io{background:var(--ice);box-shadow:0 0 10px var(--ice-bd)}
+  .diagram{display:flex;flex-direction:column;align-items:center}
+  .node{width:100%;max-width:600px;border-radius:14px;padding:16px 20px;position:relative;background:var(--panel);border:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.28)}
+  .node .tt{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);font-family:var(--mono);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .node .bd{font-size:15.5px;font-weight:600}
+  .node .sub{font-size:13px;color:var(--muted);margin-top:4px;font-weight:400}
+  code,code.inline{font-family:var(--mono);font-size:13px;background:rgba(148,163,184,.12);padding:2px 7px;border-radius:6px;color:#cdd9ea}
+  .node.io{max-width:460px;text-align:center;background:var(--panel-3)}
+  .node.memory{border-color:var(--violet-bd);background:linear-gradient(180deg,var(--violet-bg),transparent 70%),var(--panel)}
+  .node.memory .tt{color:var(--violet)}
+  .node.plastic{border-color:var(--ember-bd);background:linear-gradient(180deg,var(--ember-bg),transparent 70%),var(--panel)}
+  .node.plastic .tt{color:var(--ember-2)}
+  .badge{position:absolute;top:-10px;right:14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-2);background:var(--bg-2);color:var(--muted)}
+  .badge.violet{color:var(--violet);border-color:var(--violet-bd)}
+  .conn{display:flex;flex-direction:column;align-items:center;padding:5px 0}
+  .conn .lbl{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:5px;background:var(--bg-2);padding:2px 8px;border-radius:6px;border:1px solid var(--border)}
+  .conn .line{width:2px;height:22px;background:var(--border-2)}
+  .conn .head{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--border-2);margin-top:-1px}
+  .shape{font-family:var(--mono);font-size:11.5px;color:var(--ice);background:rgba(56,189,248,.09);padding:1px 7px;border-radius:5px;border:1px solid var(--ice-bd)}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 6px 22px rgba(0,0,0,.22)}
+  .card h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card .lead{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint)}
+  .card p{margin:8px 0 0;font-size:14px;color:var(--muted)}
+  .card p b{color:var(--text)}
+  .arm-tag{font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 9px;border-radius:7px}
+  .tag-k0{background:rgba(148,163,184,.12);color:var(--muted);border:1px solid var(--border-2)}
+  .tag-k1{background:var(--ice-bg);color:var(--ice);border:1px solid var(--ice-bd)}
+  .tag-k2{background:var(--ember-bg);color:var(--ember-2);border:1px solid var(--ember-bd)}
+  .bands{display:flex;flex-direction:column;gap:12px}
+  .band{display:grid;grid-template-columns:210px 1fr 90px;gap:18px;align-items:center;border:1px solid var(--border);border-radius:14px;padding:16px 20px;background:var(--panel);position:relative;overflow:hidden}
+  .band::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .band.l1::before{background:var(--ember)}.band.l2::before{background:var(--green)}
+  .band.l3::before{background:var(--violet)}.band.l4::before{background:var(--ice)}
+  .band .lvl{font-weight:700;font-size:15px}
+  .band .lvl small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.5px;color:var(--faint);font-weight:400;margin-top:3px}
+  .band .map{font-size:13.5px;color:var(--muted)}.band .map b{color:var(--text)}
+  .band .ret{text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .band .ret .big{font-size:20px;font-weight:700;display:block}
+  .band .ret .big.hi{color:var(--green)}.band .ret .big.lo{color:var(--faint)}
+  @media(max-width:640px){.band{grid-template-columns:1fr;gap:8px}.band .ret{text-align:left}}
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .cmp th,.cmp td{padding:13px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+  .cmp thead th{background:var(--panel-2);font-size:12px;letter-spacing:.5px}
+  .cmp tbody tr:last-child td{border-bottom:none}
+  .cmp td:first-child{color:var(--muted);font-weight:600;background:var(--panel-3)}
+  .cmp tbody tr:hover td{background:rgba(148,163,184,.04)}
+  .cmp .hit{color:var(--green);font-weight:700}.cmp .miss{color:var(--red);font-weight:700}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--panel);border:1px solid var(--violet-bd);border-radius:14px;padding:18px;position:relative}
+  .step .n{position:absolute;top:-13px;left:16px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px;background:var(--violet-2);color:#160a24;box-shadow:0 0 14px var(--violet-bd)}
+  .step h4{margin:8px 0 8px;font-size:14.5px}
+  .step .code{font-family:var(--mono);font-size:12.5px;color:#d6c4f2;background:var(--panel-3);border:1px solid var(--border);border-radius:9px;padding:11px 12px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+  .step p{font-size:13px;color:var(--muted);margin:10px 0 0}
+  .kbox{width:100%;max-width:640px;border:1.5px solid var(--violet-bd);border-radius:18px;padding:26px 22px 20px;position:relative;background:linear-gradient(180deg,var(--violet-bg),transparent 60%)}
+  .kbox-title{position:absolute;top:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--mono);font-size:12.5px;color:var(--violet);background:var(--bg);padding:3px 14px;border-radius:999px;border:1px solid var(--violet-bd)}
+  .formula{font-family:var(--mono);font-size:13.5px;line-height:2;background:var(--panel-3);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin:6px 0;color:#cdd9ea}
+  .formula .op{color:var(--ember-2)}.formula .rd{color:var(--green)}.formula .cm{color:var(--faint)}
+  .callout{border-left:3px solid var(--ice);background:var(--ice-bg);border-radius:0 12px 12px 0;padding:14px 18px;margin:20px 0;font-size:14.5px}
+  .callout b{color:var(--ice)}
+  .callout.win{border-left-color:var(--green);background:var(--green-bg)}.callout.win b{color:var(--green)}
+  .foot{padding:40px 0 60px;text-align:center;color:var(--faint);font-size:13px}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+  .pill{font-family:var(--mono);font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--panel)}
+  .pill b{color:var(--text)}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <div class="brand"><span class="dot"></span>AGI · Project 4</div>
+  <a class="link" href="#why">缘起</a>
+  <a class="link" href="#kernel">内核</a>
+  <a class="link" href="#hier">分层记忆</a>
+  <a class="link" href="#flow">实验流</a>
+  <a class="link" href="#results">结果</a>
+  <a class="link" href="#infra">基础设施</a>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="kicker">Project 4 · 从根本上不同于 Transformer</div>
+  <h1>一个<span class="g">原生快权重内核</span><br>与它挂载的分层记忆系统</h1>
+  <p class="thesis">Project 3 证明:在<b>冻结的 Transformer</b> 上外挂记忆,值能被写入/寻址/读出,却<b>无法被当作算子使用</b>(ref_acc = 0.10 = 瞎猜)。Project 4 换掉架构本身——一个从零训练、<b>记忆读即原生算子</b>的递归内核——把同一个指标从 <b>0.10 推到 1.00</b>。</p>
+  <div class="pills">
+    <span class="pill">矩阵状态 <b>S ∈ ℝ^{d×d}</b></span>
+    <span class="pill">无注意力 · 无 KV cache</span>
+    <span class="pill">多时间尺度 <b>γ=[0,.7,.95,.99]</b></span>
+    <span class="pill">5-seed <b>1.000 ± 0.000</b></span>
+  </div>
+</div></header>
+
+<!-- 1. WHY -->
+<section id="why"><div class="wrap">
+  <div class="sec-head"><span class="idx">01</span><h2>缘起 — Project 3 撞的那堵墙</h2></div>
+  <p class="sec-sub">在冻结 Transformer 上,记忆的前三个环节都成立,唯独"使用"塌成瞎猜。这不是没调好——冻结的计算图里根本没有"消费一个注入隐向量作为算子"的接口。<b>可观测 ≠ 可用</b>。</p>
+  <table class="cmp">
+    <thead><tr><th>环节</th><th>冻结 Transformer(Proj-3)</th><th>原生内核(Proj-4)</th></tr></thead>
+    <tbody>
+      <tr><td>写入 write</td><td>0.62 <span class="hit">✓</span> 值存进槽</td><td rowspan="3" style="vertical-align:middle;text-align:center;background:var(--panel)">读/写是内核状态<br>本身的更新<br><span style="color:var(--muted);font-size:13px">(不区分外挂环节)</span></td></tr>
+      <tr><td>寻址 address</td><td>0.72 <span class="hit">✓</span> 找对槽</td></tr>
+      <tr><td>读出 read</td><td>0.69 <span class="hit">✓</span> 探针可解码</td></tr>
+      <tr><td><b>使用 USE</b> (ref_acc)</td><td><span class="miss">0.10 ✗ 等于瞎猜</span></td><td><span class="hit">1.00 ✓</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout">决策(记忆已存):<b>停止在冻结 Transformer 上打补丁</b>,从零造一个小规模、根本不同的内核,让"记忆即算子"从设计第一天就是原生的。</div>
+</div></section>
+
+<!-- 2. KERNEL -->
+<section id="kernel"><div class="wrap">
+  <div class="sec-head"><span class="idx">02</span><h2>内核 — 为什么它不是 Transformer</h2></div>
+  <p class="sec-sub">每一层携带一个<b>固定大小的矩阵状态</b> <code>S</code>(快权重 / 线性注意力式联想记忆)。序列由一个递归 scan 逐 token 消费:用外积写入 <code>S</code>,再用 <code>r = S·q</code> 读回。没有 token 间注意力,没有 softmax over sequence,没有越堆越大的 KV cache。</p>
+  <div class="diagram">
+    <div class="node io"><div class="tt"><span class="sw io" style="width:9px;height:9px;border-radius:3px"></span>输入 token 流</div><div class="bd">整个会话 = 一条流 <code>[BOS, slot, R/LIT, arg, ops…, =, ans] × T</code></div><div class="sub">共享的"记忆"就是内核自己的递归状态,不是外挂模块</div></div>
+    <div class="conn"><span class="lbl">embed</span><div class="line"></div><div class="head"></div></div>
+    <div class="kbox"><div class="kbox-title">FastWeightCell · 逐 token 递归</div>
+      <div class="formula">
+<span class="cm"># 从隐状态 h 投影(k,q 做 ℓ2 归一化)</span>
+k, v, q = W_k·h, W_v·h, W_q·h ;  β = σ(W_β·h)
+<span class="op">S ← γ·S + β·(v − S·k)·kᵀ</span>   <span class="cm"># delta 规则:先擦旧关联再写新值(覆盖)</span>
+<span class="rd">r = S·q</span>                     <span class="cm"># 读 = 算子,在 cell 内部算出</span>
+out = h + W_o·r                <span class="cm"># 读直接加回残差流</span>
+      </div>
+      <div class="callout win" style="margin:14px 0 0"><b>USE 为何原生:</b> 读 <code>r = S·q</code> 在 cell 内部算出并加回残差流——不存在"把外来向量注入冻结栈"这一步,而那正是冻结 Transformer 消费不了的东西。</div>
+    </div>
+    <div class="conn"><span class="lbl">× N 层(不同 γ)</span><div class="line"></div><div class="head"></div></div>
+    <div class="node"><div class="tt">readout head</div><div class="bd"><code>=</code> 位置的隐状态 → mod-N 数字 logits</div><div class="sub">唯一的任务专用头;其余一切从随机初始化训练</div></div>
+  </div>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><div class="lead">固定状态</div><h3>不随长度膨胀</h3><p>状态永远是 <code>d×d</code> 矩阵,无论会话多长。对比 Transformer 的 KV cache 随上下文线性增长。</p></div>
+    <div class="card"><div class="lead">联想召回</div><h3>精确、不模糊</h3><p>写 <code>v⊗k</code>、以 <code>q≈k</code> 读回可精确恢复 <code>v</code>——回应"大海捞针"衰减问题;对角 SSM 会把值糊掉。</p></div>
+    <div class="card"><div class="lead">可并行</div><h3>结合律 → chunk scan</h3><p>递归是结合的 → 存在分块并行形式(chunked linear attention)。本 demo 跑串行 scan(T 短、模型小),设计本身可并行。</p></div>
+  </div>
+</div></section>
+
+<!-- 3. HIERARCHY -->
+<section id="hier"><div class="wrap">
+  <div class="sec-head"><span class="idx">03</span><h2>分层记忆 — 承重墙,不是装饰</h2></div>
+  <p class="sec-sub"><code>L</code> 层堆叠,衰减率 <code>γ</code> 铺开成一个梯度。这不是可选项:慢层<b>就是</b>跨问题的记忆库,快层<b>就是</b>问题内的工作记忆。右列是多时间尺度探针实测的"存储值可解码性"(延迟 Δ=1 时)——层级不是断言,是量出来的。</p>
+  <div class="bands">
+    <div class="band l1"><div class="lvl">Layer 0 <small>γ = 0.0</small></div><div class="map"><b>工作记忆</b> · 只记最近 token → 问题内的模运算链</div><div class="ret"><span class="big lo">0.15</span>Δ1 探针</div></div>
+    <div class="band l2"><div class="lvl">Layer 1 <small>γ = 0.7</small></div><div class="map"><b>短缓冲</b> · 保留约 1 步后快速衰减</div><div class="ret"><span class="big">0.95</span>Δ1 探针</div></div>
+    <div class="band l3"><div class="lvl">Layer 2 <small>γ = 0.95</small></div><div class="map"><b>中期保持</b> · 跨几个问题</div><div class="ret"><span class="big">0.68</span>Δ1 探针</div></div>
+    <div class="band l4"><div class="lvl">Layer 3 <small>γ = 0.99</small></div><div class="map"><b>会话级存储</b> · 跨整个会话持有 slot 值</div><div class="ret"><span class="big hi">1.00</span>全 Δ 平坦</div></div>
+  </div>
+  <div class="callout win"><b>长会话验证:</b> session_len=10、延迟到 Δ=9,慢层 γ=0.99 的探针在<b>每一个延迟</b>都是 1.00 —— 固定大小的矩阵状态不随距离模糊。这就是当初选联想式快权重矩阵、而非对角 SSM 的理由。</div>
+</div></section>
+
+<!-- 4. FLOW / ARMS -->
+<section id="flow"><div class="wrap">
+  <div class="sec-head"><span class="idx">04</span><h2>实验流 — 可证伪的任务与三个臂</h2></div>
+  <p class="sec-sub">沿用 Project 3 的<b>会话任务</b>:引用问题 <code>R0 …=</code> 必须读 slot 0 的值,而这个值<b>不在当前问题的 token 里</b> → 引用准确率直接衡量"记忆使用"。难度用 <code>session_hops</code> 扫;hops=0 纯召回是无算术混淆的最干净判据。</p>
+  <div class="steps" style="grid-template-columns:repeat(3,1fr)">
+    <div class="step" style="border-color:var(--border-2)"><div class="n" style="background:var(--muted)">K0</div><h4><span class="arm-tag tag-k0">断读对照</span></h4><div class="code">read_enabled = False
+# 快权重照常写 S
+# 但 r 永远置零</div><p>因果对照:切断读通路。预测 ref_acc → chance。</p></div>
+    <div class="step" style="border-color:var(--ice-bd)"><div class="n" style="background:var(--ice-2)">K1</div><h4><span class="arm-tag tag-k1">仅答案监督</span></h4><div class="code">loss = CE(answer)
+# 无任何读监督
+# USE 能否自己涌现?</div><p>测试:使用能否只从结果监督里涌现。</p></div>
+    <div class="step"><div class="n">K2</div><h4><span class="arm-tag tag-k2">+ 接地读监督</span></h4><div class="code">loss = CE(answer)
+     + CE(read → 存储值)
+# 引用处的读须解码出值</div><p>最接地的臂;给读通路一个直接的训练信号。</p></div>
+  </div>
+</div></section>
+
+<!-- 5. RESULTS -->
+<section id="results"><div class="wrap">
+  <div class="sec-head"><span class="idx">05</span><h2>结果 — 全矩阵(8 配置,B200)</h2></div>
+  <p class="sec-sub">墙没了,而且使用只靠答案监督就涌现(K1);断读(K0)因果地塌回 chance。</p>
+  <table class="cmp">
+    <thead><tr><th>配置</th><th>K0 ref</th><th>K1 ref</th><th>K2 ref</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>hops0(纯召回)</td><td class="miss">0.09</td><td class="hit">1.00</td><td class="hit">1.00</td><td>头条;Δ1–5 全 1.0</td></tr>
+      <tr><td>hops1(召回+1步)</td><td class="miss">0.10</td><td class="hit">1.00</td><td class="hit">1.00</td><td>使用与运算复合</td></tr>
+      <tr><td>hops2(召回+2步链)</td><td class="miss">0.09</td><td class="miss">0.10</td><td>0.10*</td><td>*K2 lit=1.0;算术 grokking 墙</td></tr>
+      <tr><td><b>5-seed</b>(纯召回)</td><td class="miss">0.10±.01</td><td class="hit">1.00±.00</td><td class="hit">1.00±.00</td><td>零方差 — 非 seed 噪声</td></tr>
+      <tr><td>Hebbian(hops1,加性写)</td><td class="miss">0.10</td><td class="hit">1.00</td><td class="hit">1.00</td><td>本任务与 delta 打平(设计性 null)</td></tr>
+      <tr><td><b>长会话</b>(len=10,Δ→9)</td><td class="miss">0.11</td><td class="hit">1.00</td><td class="hit">1.00</td><td>每个延迟都 1.0</td></tr>
+    </tbody>
+  </table>
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card"><div class="lead">最强单点</div><h3>5-seed 1.000 ± 0.000</h3><p>K0 = 0.104 ± 0.012。饱和、铁稳——不像 Proj-2b 的 OOD 幅度是 seed 敏感的。</p></div>
+    <div class="card"><div class="lead">诚实边界</div><h3>hops2 = 算术墙,非记忆失败</h3><p>从零学 mod-N 是 grokking-slow(arith uniform 同样卡 chance)。所以 <b>hops=0 才是无混淆判据</b>。curriculum 能救算术:0.99→0.88 分布内,0.59 OOD。</p></div>
+  </div>
+  <div class="callout"><b>通路:</b> Proj-3 里值能被存储、寻址、探针解码却不可用;Proj-4 里当记忆读是原生算子,使用立刻且彻底(chance→1.0)、可因果归因、且时间尺度层级可观测。冻结性在 Proj-3 是承重墙;拆掉它——靠造对内核而非推错内核——负面结果就翻正了。</p></div>
+</div></section>
+
+<!-- 6. INFRA -->
+<section id="infra"><div class="wrap">
+  <div class="sec-head"><span class="idx">06</span><h2>基础设施 — 调度器 + 看板</h2></div>
+  <p class="sec-sub">这些内核任务只占 ~4GB/183GB 且受启动开销限制,手写的 <code>&</code>+<code>wait</code> 批次浪费 GPU。两块可复用基础设施为后续所有项目服务。</p>
+  <div class="grid g2">
+    <div class="card"><div class="lead">scheduler/</div><h3>资源感知调度器</h3><p>按<b>实测显存余量装箱</b>并发(180GB 空闲 → 8 任务齐开),无状态存活判定(pgrep + metrics.json,重启不重复启动),崩溃有 grace + 重试上限。改 <code>jobs_*.json</code>,不改代码。</p></div>
+    <div class="card"><div class="lead">dashboard/</div><h3>数据驱动看板</h3><p>按 metrics.json 的<b>指标形状</b>自动出图(会话柱状 + 时间尺度扇形 / 深度-精度曲线),<code>synthDash</code> 让新老数据都有规范标题,深色模式,失败保留上次状态永不白屏。</p></div>
+  </div>
+  <div class="diagram" style="margin-top:24px">
+    <div class="node io"><div class="bd">jobs_kernel.json <span style="color:var(--faint)">(声明式任务矩阵)</span></div></div>
+    <div class="conn"><span class="lbl">schedule.py 按显存装箱</span><div class="line"></div><div class="head"></div></div>
+    <div class="node plastic"><div class="tt">B200 · 并发训练</div><div class="bd">多任务同时跑,每完成一个立即补位</div><div class="sub">state.json 每 tick 原子写出</div></div>
+    <div class="conn"><span class="lbl">collect_state.py + dashboard.sh 拉取内联</span><div class="line"></div><div class="head"></div></div>
+    <div class="node memory"><div class="tt">浏览器看板</div><div class="bd">实时训练曲线 · 结果图 · 调度器队列/运行/完成</div></div>
+  </div>
+</div></section>
+
+<div class="foot"><div class="wrap">
+  Project 4 · 非 Transformer 快权重内核 + 分层记忆 · AGI 研究系列<br>
+  代码 <code>agi_demo/kernel/</code> · 结果 <code>outputs/kernel_pulled/</code> · 详见 <code>FINDINGS_kernel.md</code>
+</div></div>
+</body>
+</html>

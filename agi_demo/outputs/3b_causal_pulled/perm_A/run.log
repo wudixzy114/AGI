@@ -1,0 +1,79 @@
+
+============================================================
+ARM A
+============================================================
+[arm A] trainable params: 3,686,400 | device=cuda | curriculum
+  step   50/3000 | hops=1 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.323 | maxhop=1 lvl_acc=0.81
+  >> advance hops 1->2 at step 80 (competent, level_acc=0.99)
+  step  100/3000 | hops=2 | loss=0.727 ans=0.727 proc=0.000 | ema_acc=0.626 | maxhop=2 lvl_acc=0.38
+  step  150/3000 | hops=2 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.858 | maxhop=2 lvl_acc=0.99
+  >> advance hops 2->3 at step 160 (competent, level_acc=0.99)
+  step  200/3000 | hops=1 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.773 | maxhop=3 lvl_acc=0.62
+  >> advance hops 3->4 at step 240 (competent, level_acc=0.96)
+  step  250/3000 | hops=4 | loss=2.562 ans=2.562 proc=0.000 | ema_acc=0.784 | maxhop=4 lvl_acc=0.06
+  step  300/3000 | hops=4 | loss=1.281 ans=1.281 proc=0.000 | ema_acc=0.693 | maxhop=4 lvl_acc=0.50
+  >> advance hops 4->5 at step 336 (competent, level_acc=0.85)
+  step  350/3000 | hops=3 | loss=0.330 ans=0.330 proc=0.000 | ema_acc=0.714 | maxhop=5 lvl_acc=0.05
+  step  400/3000 | hops=5 | loss=2.078 ans=2.078 proc=0.000 | ema_acc=0.617 | maxhop=5 lvl_acc=0.19
+  step  450/3000 | hops=5 | loss=1.688 ans=1.688 proc=0.000 | ema_acc=0.595 | maxhop=5 lvl_acc=0.41
+  step  500/3000 | hops=3 | loss=0.014 ans=0.014 proc=0.000 | ema_acc=0.677 | maxhop=5 lvl_acc=0.66
+  step  550/3000 | hops=5 | loss=0.559 ans=0.559 proc=0.000 | ema_acc=0.779 | maxhop=5 lvl_acc=0.83
+  >> advance hops 5->6 at step 557 (competent, level_acc=0.85)
+  step  600/3000 | hops=6 | loss=2.297 ans=2.297 proc=0.000 | ema_acc=0.571 | maxhop=6 lvl_acc=0.11
+  step  650/3000 | hops=6 | loss=2.266 ans=2.266 proc=0.000 | ema_acc=0.433 | maxhop=6 lvl_acc=0.15
+  step  700/3000 | hops=5 | loss=2.141 ans=2.141 proc=0.000 | ema_acc=0.440 | maxhop=6 lvl_acc=0.19
+  step  750/3000 | hops=6 | loss=2.062 ans=2.062 proc=0.000 | ema_acc=0.406 | maxhop=6 lvl_acc=0.28
+  step  800/3000 | hops=5 | loss=2.109 ans=2.109 proc=0.000 | ema_acc=0.507 | maxhop=6 lvl_acc=0.33
+  step  850/3000 | hops=3 | loss=0.043 ans=0.043 proc=0.000 | ema_acc=0.584 | maxhop=6 lvl_acc=0.39
+  step  900/3000 | hops=3 | loss=0.016 ans=0.016 proc=0.000 | ema_acc=0.587 | maxhop=6 lvl_acc=0.45
+  step  950/3000 | hops=3 | loss=0.006 ans=0.006 proc=0.000 | ema_acc=0.664 | maxhop=6 lvl_acc=0.48
+  step 1000/3000 | hops=2 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.667 | maxhop=6 lvl_acc=0.56
+  step 1050/3000 | hops=6 | loss=1.273 ans=1.273 proc=0.000 | ema_acc=0.719 | maxhop=6 lvl_acc=0.59
+  step 1100/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.744 | maxhop=6 lvl_acc=0.70
+  step 1150/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.741 | maxhop=6 lvl_acc=0.72
+  step 1200/3000 | hops=6 | loss=0.742 ans=0.742 proc=0.000 | ema_acc=0.782 | maxhop=6 lvl_acc=0.79
+  step 1250/3000 | hops=6 | loss=0.684 ans=0.684 proc=0.000 | ema_acc=0.829 | maxhop=6 lvl_acc=0.82
+  step 1300/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.848 | maxhop=6 lvl_acc=0.84
+  step 1350/3000 | hops=6 | loss=0.482 ans=0.482 proc=0.000 | ema_acc=0.873 | maxhop=6 lvl_acc=0.86
+  step 1400/3000 | hops=4 | loss=0.089 ans=0.089 proc=0.000 | ema_acc=0.869 | maxhop=6 lvl_acc=0.87
+  step 1450/3000 | hops=6 | loss=0.535 ans=0.535 proc=0.000 | ema_acc=0.877 | maxhop=6 lvl_acc=0.88
+  step 1500/3000 | hops=4 | loss=0.087 ans=0.087 proc=0.000 | ema_acc=0.887 | maxhop=6 lvl_acc=0.85
+  step 1550/3000 | hops=6 | loss=0.484 ans=0.484 proc=0.000 | ema_acc=0.892 | maxhop=6 lvl_acc=0.89
+  step 1600/3000 | hops=3 | loss=0.004 ans=0.004 proc=0.000 | ema_acc=0.916 | maxhop=6 lvl_acc=0.93
+  step 1650/3000 | hops=6 | loss=0.312 ans=0.312 proc=0.000 | ema_acc=0.895 | maxhop=6 lvl_acc=0.92
+  step 1700/3000 | hops=6 | loss=0.161 ans=0.161 proc=0.000 | ema_acc=0.921 | maxhop=6 lvl_acc=0.94
+  step 1750/3000 | hops=6 | loss=0.281 ans=0.281 proc=0.000 | ema_acc=0.909 | maxhop=6 lvl_acc=0.94
+  step 1800/3000 | hops=6 | loss=0.270 ans=0.270 proc=0.000 | ema_acc=0.932 | maxhop=6 lvl_acc=0.92
+  step 1850/3000 | hops=5 | loss=1.055 ans=1.055 proc=0.000 | ema_acc=0.929 | maxhop=6 lvl_acc=0.95
+  step 1900/3000 | hops=3 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.937 | maxhop=6 lvl_acc=0.96
+  step 1950/3000 | hops=6 | loss=0.133 ans=0.133 proc=0.000 | ema_acc=0.950 | maxhop=6 lvl_acc=0.96
+  step 2000/3000 | hops=6 | loss=0.131 ans=0.131 proc=0.000 | ema_acc=0.936 | maxhop=6 lvl_acc=0.96
+  step 2050/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.936 | maxhop=6 lvl_acc=0.95
+  step 2100/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.948 | maxhop=6 lvl_acc=0.97
+  step 2150/3000 | hops=6 | loss=0.171 ans=0.171 proc=0.000 | ema_acc=0.950 | maxhop=6 lvl_acc=0.96
+  step 2200/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.950 | maxhop=6 lvl_acc=0.97
+  step 2250/3000 | hops=6 | loss=0.143 ans=0.143 proc=0.000 | ema_acc=0.955 | maxhop=6 lvl_acc=0.95
+  step 2300/3000 | hops=3 | loss=0.027 ans=0.027 proc=0.000 | ema_acc=0.945 | maxhop=6 lvl_acc=0.96
+  step 2350/3000 | hops=6 | loss=0.145 ans=0.145 proc=0.000 | ema_acc=0.954 | maxhop=6 lvl_acc=0.96
+  step 2400/3000 | hops=6 | loss=0.160 ans=0.160 proc=0.000 | ema_acc=0.962 | maxhop=6 lvl_acc=0.96
+  step 2450/3000 | hops=4 | loss=0.031 ans=0.031 proc=0.000 | ema_acc=0.958 | maxhop=6 lvl_acc=0.96
+  step 2500/3000 | hops=6 | loss=0.086 ans=0.086 proc=0.000 | ema_acc=0.953 | maxhop=6 lvl_acc=0.97
+  step 2550/3000 | hops=4 | loss=0.023 ans=0.023 proc=0.000 | ema_acc=0.958 | maxhop=6 lvl_acc=0.97
+  step 2600/3000 | hops=6 | loss=0.104 ans=0.104 proc=0.000 | ema_acc=0.959 | maxhop=6 lvl_acc=0.96
+  step 2650/3000 | hops=6 | loss=0.066 ans=0.066 proc=0.000 | ema_acc=0.948 | maxhop=6 lvl_acc=0.96
+  step 2700/3000 | hops=3 | loss=0.001 ans=0.001 proc=0.000 | ema_acc=0.964 | maxhop=6 lvl_acc=0.97
+  step 2750/3000 | hops=6 | loss=0.118 ans=0.118 proc=0.000 | ema_acc=0.961 | maxhop=6 lvl_acc=0.97
+  step 2800/3000 | hops=4 | loss=0.007 ans=0.007 proc=0.000 | ema_acc=0.973 | maxhop=6 lvl_acc=0.98
+  step 2850/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.973 | maxhop=6 lvl_acc=0.97
+  step 2900/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.972 | maxhop=6 lvl_acc=0.97
+  step 2950/3000 | hops=1 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.961 | maxhop=6 lvl_acc=0.97
+  step 3000/3000 | hops=2 | loss=0.000 ans=0.000 proc=0.000 | ema_acc=0.959 | maxhop=6 lvl_acc=0.96
+[arm A] acc_by_hops: 1:1.00, 2:1.00, 3:1.00, 4:1.00, 5:0.72, 6:0.98, 7:0.10, 8:0.10
+
+wrote agi_demo/outputs/3b_causal/perm_A/metrics.json
+wrote figures to agi_demo/outputs/3b_causal/perm_A/
+
+============================================================
+SUMMARY
+============================================================
+arm A: params=3,686,400 | OOD acc(hops [7, 8])=[0.1, 0.1]

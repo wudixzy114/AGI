@@ -1,0 +1,37 @@
+{
+  "_comment": "Project 5 Phase A — memory-overwrite task: does delta-rule (erase-then-write) beat additive Hebbian (superpose) when a slot is REWRITTEN mid-session and the query wants the LATEST value? All jobs use --allow-overwrite + session_hops=0 (pure recall, confound-free). Two blocks: (1) delta-vs-hebb x arm at fixed 3x overwrite; (2) overwrite-depth sweep (session_len=12, vary n_slots) for both rules — the money figure: delta should stay flat, Hebbian should fall off as multiplicity rises. Run via schedule.py; leave jobs_kernel.json untouched.",
+  "base_cmd": "/opt/conda/bin/python -u -m agi_demo.kernel.run --d-model 128 --d-state 64 --n-layers 4 --decays 0,0.7,0.95,0.99 --batch-size 128 --device cuda --session --session-hops 0 --allow-overwrite",
+  "out_base": "agi_demo/outputs/p5a",
+  "defaults": {"est_mem_mb": 6000},
+  "jobs": [
+    {"name": "ovw_delta_K1", "priority": 10, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "ovw_delta_K2", "priority": 9, "est_mem_mb": 6000,
+     "args": ["--arm", "K2", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "ovw_hebb_K1", "priority": 10, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--no-delta", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "ovw_hebb_K2", "priority": 9, "est_mem_mb": 6000,
+     "args": ["--arm", "K2", "--no-delta", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "ovw_delta_K0", "priority": 4, "est_mem_mb": 6000,
+     "args": ["--arm", "K0", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3"]},
+    {"name": "ovw_hebb_K0", "priority": 4, "est_mem_mb": 6000,
+     "args": ["--arm", "K0", "--no-delta", "--session-len", "12", "--n-slots", "4", "--steps", "2500", "--lr", "3e-3"]},
+
+    {"name": "depth_delta_slots2", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--session-len", "12", "--n-slots", "2", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_delta_slots3", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--session-len", "12", "--n-slots", "3", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_delta_slots6", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--session-len", "12", "--n-slots", "6", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_delta_slots12", "priority": 7, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--session-len", "12", "--n-slots", "12", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_hebb_slots2", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--no-delta", "--session-len", "12", "--n-slots", "2", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_hebb_slots3", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--no-delta", "--session-len", "12", "--n-slots", "3", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_hebb_slots6", "priority": 8, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--no-delta", "--session-len", "12", "--n-slots", "6", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]},
+    {"name": "depth_hebb_slots12", "priority": 7, "est_mem_mb": 6000,
+     "args": ["--arm", "K1", "--no-delta", "--session-len", "12", "--n-slots", "12", "--steps", "2500", "--lr", "3e-3", "--seeds", "0,1,2"]}
+  ]
+}
