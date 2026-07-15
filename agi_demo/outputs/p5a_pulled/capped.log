@@ -1,0 +1,14 @@
+[capped] 14 jobs | max_concurrent=5 min_free=6000MB stagger=8s
+[capped 16:10:32] start ovw_delta_K1 | live=1 done=2 free=20099MB pending=11
+[capped 16:10:52] start ovw_hebb_K1 | live=2 done=2 free=18848MB pending=10
+[capped 16:11:12] start ovw_delta_K2 | live=3 done=2 free=17564MB pending=9
+[capped 16:11:32] start ovw_hebb_K2 | live=4 done=2 free=16219MB pending=8
+[capped 16:11:52] start depth_delta_slots2 | live=5 done=2 free=14873MB pending=7
+[capped 16:45:38] start depth_delta_slots3 | live=5 done=3 free=14559MB pending=6
+[capped 16:46:58] start depth_delta_slots6 | live=5 done=4 free=14648MB pending=5
+[capped 16:48:59] start depth_hebb_slots2 | live=5 done=5 free=14756MB pending=4
+[capped 16:59:41] start depth_hebb_slots3 | live=5 done=6 free=14717MB pending=3
+[capped 17:01:41] start depth_hebb_slots6 | live=5 done=7 free=14786MB pending=2
+[capped 17:24:03] start depth_delta_slots12 | live=5 done=8 free=14692MB pending=1
+[capped 17:25:03] start depth_hebb_slots12 | live=5 done=9 free=14797MB pending=0
+[capped] settled: 10 done, 4 still running, none pending — exiting (re-run to resume any that die).

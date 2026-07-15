@@ -1,0 +1,77 @@
+{
+  "config": {
+    "d_model": 128,
+    "d_state": 64,
+    "n_layers": 4,
+    "decays": [
+      0.0,
+      0.7,
+      0.95,
+      0.99
+    ],
+    "delta_rule": false,
+    "modulus": 10,
+    "task": "session",
+    "train_hops": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "eval_hops": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "session_len": 12,
+    "n_slots": 4,
+    "ref_prob": 0.5,
+    "session_hops": 0,
+    "train_steps": 2500,
+    "batch_size": 128,
+    "lr": 0.003,
+    "device": "cuda"
+  },
+  "mode": "session",
+  "seeds": [
+    0
+  ],
+  "dashboard": {
+    "title": "Session memory \u00b7 pure recall (no arithmetic)",
+    "subtitle": "session_len=12, n_slots=4, Hebbian write \u00b7 1 seed",
+    "metric": "ref_lit",
+    "kernel": "d_model=128, d_state=64, 4 layers (\u03b3=[0.0, 0.7, 0.95, 0.99])",
+    "arm_info": {
+      "K0": [
+        "K0 \u00b7 read severed",
+        "causal control \u2014 fast weights write but the read never feeds compute"
+      ],
+      "K1": [
+        "K1 \u00b7 fast-weight memory",
+        "answer supervision only \u2014 does USE emerge on its own?"
+      ],
+      "K2": [
+        "K2 \u00b7 + grounded read",
+        "adds read supervision (referenced read must decode the stored value)"
+      ]
+    }
+  },
+  "arms": {
+    "K0": {
+      "trainable_params": 401048,
+      "lit_acc": 0.10625,
+      "ref_acc": 0.09626436781609195,
+      "chance": 0.1,
+      "delay_acc": {
+        "1": 0.09240246406570841,
+        "2": 0.0896358543417367,
+        "3": 0.10815307820299501,
+        "4": 0.09898989898989899
+      },
+      "timescales": null
+    }
+  }
+}

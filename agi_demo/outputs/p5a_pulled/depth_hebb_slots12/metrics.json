@@ -1,0 +1,140 @@
+{
+  "config": {
+    "d_model": 128,
+    "d_state": 64,
+    "n_layers": 4,
+    "decays": [
+      0.0,
+      0.7,
+      0.95,
+      0.99
+    ],
+    "delta_rule": false,
+    "modulus": 10,
+    "task": "session",
+    "train_hops": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "eval_hops": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "session_len": 12,
+    "n_slots": 12,
+    "ref_prob": 0.5,
+    "session_hops": 0,
+    "train_steps": 2500,
+    "batch_size": 128,
+    "lr": 0.003,
+    "device": "cuda"
+  },
+  "mode": "session",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "dashboard": {
+    "title": "Session memory \u00b7 pure recall (no arithmetic)",
+    "subtitle": "session_len=12, n_slots=12, Hebbian write \u00b7 3 seeds",
+    "metric": "ref_lit",
+    "kernel": "d_model=128, d_state=64, 4 layers (\u03b3=[0.0, 0.7, 0.95, 0.99])",
+    "arm_info": {
+      "K0": [
+        "K0 \u00b7 read severed",
+        "causal control \u2014 fast weights write but the read never feeds compute"
+      ],
+      "K1": [
+        "K1 \u00b7 fast-weight memory",
+        "answer supervision only \u2014 does USE emerge on its own?"
+      ],
+      "K2": [
+        "K2 \u00b7 + grounded read",
+        "adds read supervision (referenced read must decode the stored value)"
+      ]
+    }
+  },
+  "arms": {
+    "K1": {
+      "trainable_params": 402072,
+      "ref_acc": 1.0,
+      "ref_acc_std": 0.0,
+      "lit_acc": 1.0,
+      "lit_acc_std": 0.0,
+      "chance": 0.1,
+      "per_seed_ref": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "timescales": {
+        "chance": 0.1,
+        "layers": [
+          {
+            "gamma": 0.0,
+            "acc_by_delay": {
+              "1": 0.08050847457627118,
+              "2": 0.12804878048780488,
+              "3": 0.12096774193548387,
+              "4": 0.09782608695652174,
+              "5": 0.05405405405405406,
+              "6": 0.03278688524590164,
+              "7": 0.02564102564102564,
+              "8": 0.1935483870967742,
+              "9": 0.037037037037037035
+            }
+          },
+          {
+            "gamma": 0.7,
+            "acc_by_delay": {
+              "1": 0.4533898305084746,
+              "2": 0.18292682926829268,
+              "3": 0.10483870967741936,
+              "4": 0.11956521739130435,
+              "5": 0.16216216216216217,
+              "6": 0.04918032786885246,
+              "7": 0.05128205128205128,
+              "8": 0.06451612903225806,
+              "9": 0.07407407407407407
+            }
+          },
+          {
+            "gamma": 0.95,
+            "acc_by_delay": {
+              "1": 0.8008474576271186,
+              "2": 0.29878048780487804,
+              "3": 0.3064516129032258,
+              "4": 0.3695652173913043,
+              "5": 0.32432432432432434,
+              "6": 0.22950819672131148,
+              "7": 0.1282051282051282,
+              "8": 0.0967741935483871,
+              "9": 0.07407407407407407
+            }
+          },
+          {
+            "gamma": 0.99,
+            "acc_by_delay": {
+              "1": 0.5805084745762712,
+              "2": 0.4573170731707317,
+              "3": 0.5161290322580645,
+              "4": 0.42391304347826086,
+              "5": 0.33783783783783783,
+              "6": 0.4098360655737705,
+              "7": 0.38461538461538464,
+              "8": 0.41935483870967744,
+              "9": 0.2222222222222222
+            }
+          }
+        ]
+      }
+    }
+  }
+}

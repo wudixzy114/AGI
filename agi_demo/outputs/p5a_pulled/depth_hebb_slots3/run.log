@@ -1,0 +1,188 @@
+
+============================================================
+ARM K1
+============================================================
+
+----- K1 seed 0 -----
+[arm K1] trainable=400,920 device=cuda decays=[0.0, 0.7, 0.95, 0.99] read=ON | session
+  step   50/2500 loss=0.923 acc=0.704 ref=0.588 lit=0.793 read_sup=0.000 | ref_ema=0.476
+  step  100/2500 loss=0.437 acc=0.836 ref=0.636 lit=0.998 read_sup=0.000 | ref_ema=0.615
+  step  150/2500 loss=0.364 acc=0.846 ref=0.668 lit=0.999 read_sup=0.000 | ref_ema=0.639
+  step  200/2500 loss=0.382 acc=0.824 ref=0.623 lit=1.000 read_sup=0.000 | ref_ema=0.650
+  step  250/2500 loss=0.319 acc=0.849 ref=0.673 lit=0.999 read_sup=0.000 | ref_ema=0.644
+  step  300/2500 loss=0.310 acc=0.848 ref=0.667 lit=1.000 read_sup=0.000 | ref_ema=0.652
+  step  350/2500 loss=0.309 acc=0.839 ref=0.638 lit=1.000 read_sup=0.000 | ref_ema=0.644
+  step  400/2500 loss=0.330 acc=0.838 ref=0.642 lit=1.000 read_sup=0.000 | ref_ema=0.648
+  step  450/2500 loss=0.302 acc=0.851 ref=0.679 lit=1.000 read_sup=0.000 | ref_ema=0.657
+  step  500/2500 loss=0.198 acc=0.924 ref=0.832 lit=1.000 read_sup=0.000 | ref_ema=0.758
+  step  550/2500 loss=0.017 acc=0.996 ref=0.993 lit=0.999 read_sup=0.000 | ref_ema=0.947
+  step  600/2500 loss=0.007 acc=0.997 ref=0.994 lit=1.000 read_sup=0.000 | ref_ema=0.991
+  step  650/2500 loss=0.004 acc=0.998 ref=0.996 lit=1.000 read_sup=0.000 | ref_ema=0.996
+  step  700/2500 loss=0.002 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step  750/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step  800/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step  850/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step  900/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step  950/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1000/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1050/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1100/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1150/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1200/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1250/2500 loss=0.004 acc=0.998 ref=0.996 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1300/2500 loss=0.007 acc=0.997 ref=0.994 lit=1.000 read_sup=0.000 | ref_ema=0.995
+  step 1350/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 1400/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1550/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1600/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1650/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1700/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1750/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1800/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1850/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1900/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1950/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2000/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2050/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2100/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2150/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2200/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2250/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2300/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2350/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2400/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+[arm K1] lit_acc=1.000 ref_acc=1.000 (chance 0.10) delay={1: 1.0, 2: 1.0, 3: 1.0}
+    layer γ=0.0: Δ1:0.11, Δ2:0.11, Δ3:0.11
+    layer γ=0.7: Δ1:0.78, Δ2:0.30, Δ3:0.21
+    layer γ=0.95: Δ1:0.31, Δ2:0.31, Δ3:0.35
+    layer γ=0.99: Δ1:0.52, Δ2:0.32, Δ3:0.31
+
+----- K1 seed 1 -----
+[arm K1] trainable=400,920 device=cuda decays=[0.0, 0.7, 0.95, 0.99] read=ON | session
+  step   50/2500 loss=0.772 acc=0.742 ref=0.576 lit=0.882 read_sup=0.000 | ref_ema=0.492
+  step  100/2500 loss=0.432 acc=0.832 ref=0.625 lit=0.998 read_sup=0.000 | ref_ema=0.621
+  step  150/2500 loss=0.391 acc=0.833 ref=0.633 lit=1.000 read_sup=0.000 | ref_ema=0.637
+  step  200/2500 loss=0.353 acc=0.842 ref=0.662 lit=1.000 read_sup=0.000 | ref_ema=0.638
+  step  250/2500 loss=0.346 acc=0.828 ref=0.615 lit=1.000 read_sup=0.000 | ref_ema=0.645
+  step  300/2500 loss=0.329 acc=0.834 ref=0.640 lit=1.000 read_sup=0.000 | ref_ema=0.643
+  step  350/2500 loss=0.328 acc=0.832 ref=0.648 lit=1.000 read_sup=0.000 | ref_ema=0.643
+  step  400/2500 loss=0.311 acc=0.838 ref=0.634 lit=1.000 read_sup=0.000 | ref_ema=0.650
+  step  450/2500 loss=0.334 acc=0.835 ref=0.625 lit=1.000 read_sup=0.000 | ref_ema=0.647
+  step  500/2500 loss=0.302 acc=0.840 ref=0.658 lit=1.000 read_sup=0.000 | ref_ema=0.643
+  step  550/2500 loss=0.293 acc=0.845 ref=0.670 lit=1.000 read_sup=0.000 | ref_ema=0.646
+  step  600/2500 loss=0.291 acc=0.842 ref=0.660 lit=1.000 read_sup=0.000 | ref_ema=0.650
+  step  650/2500 loss=0.298 acc=0.846 ref=0.664 lit=1.000 read_sup=0.000 | ref_ema=0.661
+  step  700/2500 loss=0.257 acc=0.874 ref=0.722 lit=1.000 read_sup=0.000 | ref_ema=0.683
+  step  750/2500 loss=0.158 acc=0.918 ref=0.817 lit=1.000 read_sup=0.000 | ref_ema=0.785
+  step  800/2500 loss=0.067 acc=0.978 ref=0.956 lit=0.996 read_sup=0.000 | ref_ema=0.903
+  step  850/2500 loss=0.020 acc=0.993 ref=0.986 lit=1.000 read_sup=0.000 | ref_ema=0.972
+  step  900/2500 loss=0.011 acc=0.996 ref=0.993 lit=0.999 read_sup=0.000 | ref_ema=0.990
+  step  950/2500 loss=0.004 acc=0.999 ref=0.997 lit=1.000 read_sup=0.000 | ref_ema=0.995
+  step 1000/2500 loss=0.002 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 1050/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1100/2500 loss=0.003 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1150/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1200/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1250/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1300/2500 loss=0.015 acc=0.996 ref=0.991 lit=1.000 read_sup=0.000 | ref_ema=0.995
+  step 1350/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.996
+  step 1400/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1550/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1600/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1650/2500 loss=0.003 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 1700/2500 loss=0.002 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1750/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1800/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1850/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1900/2500 loss=0.001 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1950/2500 loss=0.006 acc=0.997 ref=0.994 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 2000/2500 loss=0.003 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.996
+  step 2050/2500 loss=0.004 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.997
+  step 2100/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2150/2500 loss=0.003 acc=0.998 ref=0.996 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 2200/2500 loss=0.004 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2250/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2300/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2350/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2400/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+[arm K1] lit_acc=1.000 ref_acc=1.000 (chance 0.10) delay={1: 1.0, 2: 1.0, 3: 1.0}
+    layer γ=0.0: Δ1:0.10, Δ2:0.10, Δ3:0.11
+    layer γ=0.7: Δ1:0.57, Δ2:0.25, Δ3:0.18
+    layer γ=0.95: Δ1:0.53, Δ2:0.39, Δ3:0.35
+    layer γ=0.99: Δ1:0.26, Δ2:0.24, Δ3:0.31
+
+----- K1 seed 2 -----
+[arm K1] trainable=400,920 device=cuda decays=[0.0, 0.7, 0.95, 0.99] read=ON | session
+  step   50/2500 loss=0.775 acc=0.770 ref=0.651 lit=0.878 read_sup=0.000 | ref_ema=0.511
+  step  100/2500 loss=0.465 acc=0.810 ref=0.600 lit=0.990 read_sup=0.000 | ref_ema=0.620
+  step  150/2500 loss=0.404 acc=0.821 ref=0.622 lit=0.993 read_sup=0.000 | ref_ema=0.637
+  step  200/2500 loss=0.377 acc=0.827 ref=0.615 lit=0.999 read_sup=0.000 | ref_ema=0.636
+  step  250/2500 loss=0.335 acc=0.837 ref=0.654 lit=1.000 read_sup=0.000 | ref_ema=0.636
+  step  300/2500 loss=0.343 acc=0.829 ref=0.624 lit=1.000 read_sup=0.000 | ref_ema=0.638
+  step  350/2500 loss=0.318 acc=0.831 ref=0.629 lit=1.000 read_sup=0.000 | ref_ema=0.639
+  step  400/2500 loss=0.316 acc=0.837 ref=0.636 lit=1.000 read_sup=0.000 | ref_ema=0.641
+  step  450/2500 loss=0.314 acc=0.840 ref=0.649 lit=1.000 read_sup=0.000 | ref_ema=0.644
+  step  500/2500 loss=0.309 acc=0.845 ref=0.666 lit=1.000 read_sup=0.000 | ref_ema=0.643
+  step  550/2500 loss=0.318 acc=0.835 ref=0.640 lit=1.000 read_sup=0.000 | ref_ema=0.650
+  step  600/2500 loss=0.301 acc=0.842 ref=0.648 lit=1.000 read_sup=0.000 | ref_ema=0.648
+  step  650/2500 loss=0.249 acc=0.885 ref=0.745 lit=0.999 read_sup=0.000 | ref_ema=0.710
+  step  700/2500 loss=0.177 acc=0.909 ref=0.785 lit=1.000 read_sup=0.000 | ref_ema=0.790
+  step  750/2500 loss=0.173 acc=0.919 ref=0.818 lit=1.000 read_sup=0.000 | ref_ema=0.819
+  step  800/2500 loss=0.085 acc=0.971 ref=0.939 lit=0.998 read_sup=0.000 | ref_ema=0.882
+  step  850/2500 loss=0.032 acc=0.987 ref=0.971 lit=1.000 read_sup=0.000 | ref_ema=0.962
+  step  900/2500 loss=0.009 acc=0.998 ref=0.996 lit=1.000 read_sup=0.000 | ref_ema=0.990
+  step  950/2500 loss=0.007 acc=0.997 ref=0.994 lit=1.000 read_sup=0.000 | ref_ema=0.995
+  step 1000/2500 loss=0.004 acc=0.999 ref=0.997 lit=1.000 read_sup=0.000 | ref_ema=0.996
+  step 1050/2500 loss=0.017 acc=0.995 ref=0.990 lit=1.000 read_sup=0.000 | ref_ema=0.994
+  step 1100/2500 loss=0.004 acc=0.999 ref=0.997 lit=1.000 read_sup=0.000 | ref_ema=0.996
+  step 1150/2500 loss=0.002 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1200/2500 loss=0.004 acc=0.999 ref=1.000 lit=0.998 read_sup=0.000 | ref_ema=0.999
+  step 1250/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1300/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1350/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1400/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1550/2500 loss=0.008 acc=0.997 ref=0.993 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1600/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1650/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 1700/2500 loss=0.001 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 1750/2500 loss=0.005 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1800/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1850/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 1900/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 1950/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2000/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.998
+  step 2050/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2100/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2150/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2200/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2250/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2300/2500 loss=0.001 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2350/2500 loss=0.002 acc=0.999 ref=0.999 lit=1.000 read_sup=0.000 | ref_ema=0.999
+  step 2400/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2450/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+  step 2500/2500 loss=0.000 acc=1.000 ref=1.000 lit=1.000 read_sup=0.000 | ref_ema=1.000
+[arm K1] lit_acc=1.000 ref_acc=1.000 (chance 0.10) delay={1: 1.0, 2: 1.0, 3: 1.0}
+    layer γ=0.0: Δ1:0.11, Δ2:0.11, Δ3:0.13
+    layer γ=0.7: Δ1:1.00, Δ2:0.31, Δ3:0.34
+    layer γ=0.95: Δ1:0.66, Δ2:0.68, Δ3:0.51
+    layer γ=0.99: Δ1:0.44, Δ2:0.48, Δ3:0.51
+[arm K1] 3-seed ref_acc=1.000±0.000
+
+wrote agi_demo/outputs/p5a/depth_hebb_slots3/metrics.json
+wrote figures to agi_demo/outputs/p5a/depth_hebb_slots3/
+
+============================================================
+SUMMARY (session)
+============================================================
+arm K1: ref_acc=1.00 lit_acc=1.00 (chance 0.10)
+Reading: K1/K2 ref_acc >> chance ⇒ the native kernel USES memory (Proj-3 got 0.10). K0 (read severed) ≈ chance ⇒ it's the associative READ that matters.

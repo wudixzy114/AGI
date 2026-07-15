@@ -1,0 +1,116 @@
+{
+  "config": {
+    "d_model": 128,
+    "d_state": 64,
+    "n_layers": 4,
+    "decays": [
+      0.0,
+      0.7,
+      0.95,
+      0.99
+    ],
+    "delta_rule": false,
+    "modulus": 10,
+    "task": "session",
+    "train_hops": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "eval_hops": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "session_len": 12,
+    "n_slots": 3,
+    "ref_prob": 0.5,
+    "session_hops": 0,
+    "train_steps": 2500,
+    "batch_size": 128,
+    "lr": 0.003,
+    "device": "cuda"
+  },
+  "mode": "session",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "dashboard": {
+    "title": "Session memory \u00b7 pure recall (no arithmetic)",
+    "subtitle": "session_len=12, n_slots=3, Hebbian write \u00b7 3 seeds",
+    "metric": "ref_lit",
+    "kernel": "d_model=128, d_state=64, 4 layers (\u03b3=[0.0, 0.7, 0.95, 0.99])",
+    "arm_info": {
+      "K0": [
+        "K0 \u00b7 read severed",
+        "causal control \u2014 fast weights write but the read never feeds compute"
+      ],
+      "K1": [
+        "K1 \u00b7 fast-weight memory",
+        "answer supervision only \u2014 does USE emerge on its own?"
+      ],
+      "K2": [
+        "K2 \u00b7 + grounded read",
+        "adds read supervision (referenced read must decode the stored value)"
+      ]
+    }
+  },
+  "arms": {
+    "K1": {
+      "trainable_params": 400920,
+      "ref_acc": 1.0,
+      "ref_acc_std": 0.0,
+      "lit_acc": 1.0,
+      "lit_acc_std": 0.0,
+      "chance": 0.1,
+      "per_seed_ref": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "timescales": {
+        "chance": 0.1,
+        "layers": [
+          {
+            "gamma": 0.0,
+            "acc_by_delay": {
+              "1": 0.10989010989010989,
+              "2": 0.11191335740072202,
+              "3": 0.11065573770491803
+            }
+          },
+          {
+            "gamma": 0.7,
+            "acc_by_delay": {
+              "1": 0.782967032967033,
+              "2": 0.30324909747292417,
+              "3": 0.21311475409836064
+            }
+          },
+          {
+            "gamma": 0.95,
+            "acc_by_delay": {
+              "1": 0.31043956043956045,
+              "2": 0.3140794223826715,
+              "3": 0.3524590163934426
+            }
+          },
+          {
+            "gamma": 0.99,
+            "acc_by_delay": {
+              "1": 0.521978021978022,
+              "2": 0.3176895306859206,
+              "3": 0.3073770491803279
+            }
+          }
+        ]
+      }
+    }
+  }
+}
