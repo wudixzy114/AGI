@@ -1,81 +1,72 @@
 # AGI — Latent Reasoning, Self-Evolution, and Hierarchical Memory
 
-A falsifiable research program probing an alternative to "freeze the weights after training."
-The thesis (see [`docs/thesis_memory-and-dimensionality_20260713.md`](docs/thesis_memory-and-dimensionality_20260713.md))
-is a single system in three parts:
+> **一个可证伪的研究计划，主题是"训练后不冻结权重"能不能造出更强的推理系统。**
+> 这不是"AGI 概念验证"，是一个有 ground truth、能被线性探针测量的实证项目。
 
-1. **Latent-space deep reasoning** — think in continuous space, not by decoding tokens (Coconut-style).
-2. **"留白" + iterative self-evolution** — the model keeps changing after training; a stability–plasticity split (frozen base + plastic modules).
-3. **Short-term memory via hierarchical latent** — layered thinking → layered memory at different timescales.
+## 核心命题
 
-Unifying frame: a **memory hierarchy with consolidation** — working memory/compute → short-term memory → consolidation (short→long) → frozen base as long-term memory.
+论文分三块（详见 `docs/thesis_memory-and-dimensionality_20260713.md`）：
 
-Every experiment uses synthetic mod-N multi-hop arithmetic where **every intermediate step has exact ground truth**, so a linear probe can measure whether the latent chain stays decodable. That observability is the backbone of every result below.
+1. **潜在空间深度推理** — 不通过解码 token 来"思考"，而是在连续向量空间里推（Coconut 风格）
+2. **"留白" + 迭代自演化** — 训练完成后模型继续变化；稳定-可塑性分离（frozen base + plastic modules）
+3. **分层潜变量做短时记忆** — 分层思考 ↔ 不同时间尺度的分层记忆
 
----
+统一视角：**有巩固机制的层级化记忆** —— 工作记忆/计算 → 短时记忆 → 巩固（短→长）→ 冻结基座作为长期记忆。
 
-## The research program (Project 1 → 5)
+## 实验设计
 
-| # | Question | Verdict | Writeup |
-|---|----------|---------|---------|
-| **1** | Can a frozen 0.5B + LoRA reason in latent space? | Latent arms collapse under uniform difficulty but **beat baseline OOD under a competence-gated curriculum**. The "变" module is fragile to train, not weak. | [`agi_demo/FINDINGS.md`](agi_demo/FINDINGS.md) |
-| **2** | Does it hold at 3B scale? | Process supervision is what makes latent pay off; **OOD generalization ⇔ intermediate-chain decodability**. | [`agi_demo/FINDINGS_3B.md`](agi_demo/FINDINGS_3B.md) |
-| **2b** | Causal ablation + robustness | Varying *only* which latent steps get process supervision moves OOD **monotonically** (none < deep < shallow < full), and the probe mirrors it — supervision *causes* decodability. Cross-task (perm) holds; magnitudes are seed-noisy. | [`agi_demo/FINDINGS_causal.md`](agi_demo/FINDINGS_causal.md) |
-| **3** | Bolt external memory onto the frozen Transformer? | **Clean negative:** write ✓, address ✓, read ✓, but **USE = chance**. A frozen Transformer was never trained to consume an injected latent as an operand; partial unfreezing destabilizes it. Observability ≠ usability. | [`agi_demo/FINDINGS_memory.md`](agi_demo/FINDINGS_memory.md) |
-| **4** | Build a kernel where memory-as-operand is *native*? | A from-scratch **fast-weight kernel** (matrix state `S`, delta-rule write, in-cell read) turns Project 3's `USE=0.10` into **`ref_acc=1.00`**, with a **measured** timescale hierarchy ordered by decay γ. | [`agi_demo/FINDINGS_kernel.md`](agi_demo/FINDINGS_kernel.md) |
-| **5** | Consolidation loop on a more realistic task | **In progress** on the B200 (overwrite task → sleep consolidation → bAbI-style entity tracking → moderate scale-up). | — |
+每个实验都用合成的 mod-N 多跳算术，**每个中间步骤都有精确 ground truth**，
+所以可以用线性探针测量潜在推理链是否仍可被解码。这个可观测性是所有结论的支柱。
 
----
+## 5 个子项目
 
-## Layout
+| # | 问题 | 结论 | 报告 |
+|---|---|---|---|
+| **1** | 0.5B frozen + LoRA 能在潜在空间推理吗？ | 难度均匀时潜在路径坍缩，但在**能力门控课程**下 OOD 优于 baseline。 | [`agi_demo/FINDINGS.md`](agi_demo/FINDINGS.md) |
+| **2** | 3B 规模还成立吗？ | 过程监督是潜在推理"划算"的前提；**OOD 泛化 ↔ 中间链可解码性**。 | [`agi_demo/FINDINGS_3B.md`](agi_demo/FINDINGS_3B.md) |
+| **2b** | 因果消融 + 鲁棒性 | 只改"哪几步潜在步骤受过程监督"，OOD 单调变化（无 < 深 < 浅 < 全），探针镜像这个趋势——**监督 ↔ 因果** ↔ 可解码性。跨任务（perm）成立，量级有种子噪声。 | [`agi_demo/FINDINGS_causal.md`](agi_demo/FINDINGS_causal.md) |
+| **3** | 给 frozen Transformer 加外挂记忆？ | **干净的负结果**：写 ✓、寻址 ✓、读 ✓，但**用 = 随机**。frozen Transformer 从未学过把注入的潜在当操作数；部分解冻会破坏稳定性。**可观测 ≠ 可用**。 | [`agi_demo/FINDINGS_memory.md`](agi_demo/FINDINGS_memory.md) |
+| **4** | 从头做一个"记忆当操作数"是原生的内核？ | 自研的 **fast-weight kernel**（矩阵状态 S，delta-rule 写入，in-cell 读取）把 Project 3 的 `USE=0.10` 提升到 **`ref_acc=1.00`**，并测出**按衰减 λ 排序的时间尺度层级**。 | [`agi_demo/FINDINGS_kernel.md`](agi_demo/FINDINGS_kernel.md) |
+| **5** | 更真实任务上的巩固循环 | **进行中**（B200 上：覆写任务 → 睡眠巩固 → bAbI 风格实体追踪 → 中等规模 scale-up）。 | — |
+
+## 仓库结构
 
 ```
 AGI/
-├── agi_demo/                  # the single Python package for the whole program
-│   ├── config.py model.py task.py train.py run.py probe.py plot.py
-│   │                          #   Projects 1–2b: frozen Qwen + LoRA + Coconut loop
-│   ├── memory.py diag_read.py #   Project 3: addressable latent memory slots
-│   ├── kernel/                #   Project 4: from-scratch non-Transformer fast-weight kernel
-│   ├── dashboard/             # data-driven live training dashboard (stdlib + vendored Chart.js)
-│   ├── scheduler/             # resource-aware GPU job scheduler (packs a matrix by measured VRAM)
-│   ├── outputs/               # committed results: metrics.json, logs, figures (no checkpoints)
-│   └── FINDINGS*.md           # one writeup per project
-├── docs/
-│   ├── thesis_memory-and-dimensionality_20260713.md   # the originating thesis
-│   └── architecture.html                              # architecture overview
-├── requirements.txt
-├── archives/                  # per-project result bundles (git-ignored; see below)
-└── models/  .venv/            # local weights + venv (git-ignored, ~2.3 GB)
+├─ agi_demo/                  # 5 个子项目的实验代码 + 报告
+│  ├─ FINDINGS.md             # Project 1
+│  ├─ FINDINGS_3B.md          # Project 2
+│  ├─ FINDINGS_causal.md      # Project 2b
+│  ├─ FINDINGS_memory.md      # Project 3
+│  └─ FINDINGS_kernel.md      # Project 4
+├─ docs/
+│  └─ thesis_memory-and-dimensionality_20260713.md   # 核心论文
+├─ requirements.txt
+└─ README.md (本文件)
 ```
 
-## Running
+## 技术栈
 
-Everything is invoked as a module from the repo root (import paths depend on the `agi_demo` package name):
+- **语言**：Python 3.11+
+- **ML 框架**：PyTorch + transformers + peft（LoRA）
+- **实验追踪**：wandb
+- **硬件**：B200（H100/4090 也能跑小规模实验）
+- **可观测性**：线性探针（sklearn）、t-SNE / PCA 可视化
 
-```bash
-# Projects 1–2b (Qwen latent reasoning) — always use --curriculum for latent arms
-python -m agi_demo.run --curriculum --out-dir agi_demo/outputs/<name>
+## 关键发现摘要
 
-# Project 4 (fast-weight kernel) — arms K0/K1/K2, --session / --arith
-python -m agi_demo.kernel.run --session --out-dir agi_demo/outputs/<name>
+1. **潜在推理"能用"是有条件的**——均匀难度下坍缩，能力门控课程下能 OOD
+2. **过程监督是潜在推理的前提**，不是装饰
+3. **frozen base + 外挂记忆 ≠ 记忆系统** —— Transformer 不会"读"注入的向量
+4. **fast-weight kernel 是更优的记忆原语**，天然支持时间尺度分层
+5. **可观测性是研究的支柱**——没探针就只能讲故事
 
-# Live dashboard (watches a remote or local run dir; renders to /tmp, opens a browser)
-bash agi_demo/dashboard/dashboard.sh <host> <run_dir> <interval_s>
+## 状态
 
-# Resource-aware scheduler (edit the jobs_*.json matrix, not the code)
-bash agi_demo/scheduler/submit.sh <host> agi_demo/scheduler/jobs_p5a.json <max_concurrent>
-```
+- **v0.x** 状态：5 个子项目已完成 4 个，Project 5（巩固循环）进行中
+- 论文草稿在 `docs/`
+- 不在计划内：上生产、做产品
 
-## Remote environment (九数 / 9N)
+## License
 
-Training runs on a B200 notebook (`ea-ssh` host `ea-main2`): 183 GB, **no public internet**, model
-hub at `/media/cfs/9n-das-admin/llm_models/`, pip via `http://mirrors.jd.local/pypi/web/simple/`,
-code + results synced under `/media/cfs/xiezongyu.1/AGI/`. The dashboard and scheduler SSH into this
-host; local scripts only pull state.
-
-## Archives
-
-`archives/` holds per-project result bundles named `agi_<proj>_<topic>_<YYYYMMDD>.zip`
-(`agi_proj1-2b_latent-reasoning_*`, `agi_proj3_memory_*`, `agi_proj4_kernel_*`). They are a
-convenience for sharing and are **git-ignored** — the results themselves are tracked under
-`agi_demo/outputs/`, so committing the zips too would only duplicate them.
+MIT（实验代码）；数据合成脚本遵循 Apache 2.0。
